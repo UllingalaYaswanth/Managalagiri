@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cesium - Modify Building Height</title>
+    <script src="https://unpkg.com/cesium@latest/Build/Cesium/Cesium.js"></script>
+    <link href="https://unpkg.com/cesium@latest/Build/Cesium/Widgets/widgets.css" rel="stylesheet">
+    <style>
+        html, body, #cesiumContainer {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+        }
+    </style>
+</head>
+<body>
+    <div id="cesiumContainer"></div>
+
+    <script>
+        Cesium.createWorldTerrainAsync().then(terrainProvider => {
+            const viewer = new Cesium.Viewer('cesiumContainer', {
+                terrainProvider: terrainProvider
+            });
+
+            // Load local GeoJSON file (replace 'path_to_geojson' with the actual path to your file)
+            const geoJsonUrl = 'http://192.168.6.8:8081/export%20(1).geojson'; // Update this path
+
+            // Load the GeoJSON data from the local file
+            fetch(geoJsonUrl)
+                .then(response => response.json())
+                .then(geojsonData => {
+                    // Load GeoJSON into Cesium
+                    Cesium.GeoJsonDataSource.load(geojsonData, {
+                        clampToGround: false  // Ensure buildings are rendered with height
+                    }).then(dataSource => {
+                        viewer.dataSources.add(dataSource);
+                        const entities = dataSource.entities.values;
+
+                        // Set height extrusion for buildings from GeoJSON
+                        for (let i = 0; i < entities.length; i++) {
+                            const entity = entities[i];
+                            if (entity.polygon) {
+                                const height = entity.properties.height ? entity.properties.height.getValue() : 10; // Default height
+                                entity.polygon.extrudedHeight = height;
+                                entity.polygon.material = Cesium.Color.BLUE.withAlpha(0.6);
+                                entity.polygon.outline = true;
+                                entity.polygon.outlineColor = Cesium.Color.BLACK;
+
+                                // Apply color based on height
+                                const colorCondition = height > 100 ? Cesium.Color.RED :
+                                                      (height > 50 ? Cesium.Color.ORANGE :
+                                                      (height > 30 ? Cesium.Color.YELLOW :
+                                                      (height > 10 ? Cesium.Color.GREEN :
+                                                      Cesium.Color.BLACK)));
+                                entity.polygon.material = colorCondition.withAlpha(0.6);
+                            }
+                        }
+
+                        viewer.zoomTo(dataSource);
+                    });
+                })
+                .catch(error => {
+                    console.log(`Error loading GeoJSON file: ${error}`);
+                });
+        });
+    </script>
+</body>
+</html>

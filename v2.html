@@ -1,0 +1,127 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cesium - Display Building Names and Videos</title>
+    <script src="https://unpkg.com/cesium@latest/Build/Cesium/Cesium.js"></script>
+    <link href="https://unpkg.com/cesium@latest/Build/Cesium/Widgets/widgets.css" rel="stylesheet">
+    <style>
+        html, body, #cesiumContainer {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+        }
+    </style>
+</head>
+<body>
+    <div id="cesiumContainer"></div>
+
+    <script>
+        Cesium.createWorldTerrainAsync().then(terrainProvider => {
+            const viewer = new Cesium.Viewer('cesiumContainer', {
+                terrainProvider: terrainProvider,
+                sceneMode: Cesium.SceneMode.SCENE3D,
+            });
+
+            const zoomThreshold = 500;  // Zoom threshold in meters for showing labels
+
+            // GeoJSON Data URL
+            const geoJsonUrl = 'http://192.168.6.8:8081/data-test.geojson'; // Update this path if necessary
+
+            fetch(geoJsonUrl)
+                .then(response => response.json())
+                .then(geojsonData => {
+                    Cesium.GeoJsonDataSource.load(geojsonData, {
+                        clampToGround: false  // Ensure buildings are rendered with height
+                    }).then(dataSource => {
+                        viewer.dataSources.add(dataSource);
+                        const entities = dataSource.entities.values;
+
+                        // Store label entities for easy control later
+                        const buildingLabels = [];
+
+                        entities.forEach(entity => {
+                            // For polygon features (buildings)
+                            if (entity.polygon) {
+                                const buildingName = entity.properties['@id'] || 'Unknown Building';
+
+                                // Get the centroid of the polygon to place the label above
+                                const positions = entity.polygon.hierarchy.getValue(Cesium.JulianDate.now()).positions;
+                                const center = Cesium.Cartesian3.fromDegrees(
+                                    Cesium.Math.toDegrees(Cesium.Cartographic.fromCartesian(positions[0]).longitude),
+                                    Cesium.Math.toDegrees(Cesium.Cartographic.fromCartesian(positions[0]).latitude),
+                                    0
+                                );
+
+                                // Add the label above the building at the centroid
+                                const labelEntity = viewer.entities.add({
+                                    position: center,
+                                    label: {
+                                        text: buildingName,
+                                        font: '14px sans-serif',
+                                        fillColor: Cesium.Color.WHITE,
+                                        scale: 1.5,
+                                        pixelOffset: new Cesium.Cartesian2(0, -30), // Offset the label above the building
+                                        show: false // Initially hide the label
+                                    }
+                                });
+
+                                // Store label entity
+                                buildingLabels.push(labelEntity);
+
+                                // Set height extrusion for the building (we assume a height of 10 meters if not provided)
+                                const height = entity.properties.height ? entity.properties.height.getValue() : 10;
+                                entity.polygon.extrudedHeight = height;
+                                entity.polygon.material = Cesium.Color.BLUE.withAlpha(0.6);
+                                entity.polygon.outline = true;
+                                entity.polygon.outlineColor = Cesium.Color.BLACK;
+                            }
+
+                            // For point features (anchors), add a video popup
+                            if (entity.position && entity.properties.video) {
+                                const videoUrl = entity.properties.video;
+
+                                // Set the description with HTML for the video
+                                entity.description = ` 
+                                    <h3>${entity.properties['@id']}</h3>
+                                    <video width="320" height="240" controls>
+                                        <source src="${videoUrl}" type="video/mp4">
+                                        Your browser does not support the video tag.
+                                    </video>
+                                `;
+                            }
+                        });
+
+                        // Function to check zoom level and toggle label visibility
+                        function checkZoomLevel() {
+                            const cameraHeight = viewer.camera.positionCartographic.height;
+                            buildingLabels.forEach(labelEntity => {
+                                if (cameraHeight < zoomThreshold) {
+                                    labelEntity.label.show = true; // Show the label
+                                } else {
+                                    labelEntity.label.show = false; // Hide the label
+                                }
+                            });
+                        }
+
+                        // Monitor camera movement
+                        viewer.camera.changed.addEventListener(checkZoomLevel);
+
+                        // Initial check
+                        checkZoomLevel();
+
+                        // Zoom to the entire data source
+                        viewer.zoomTo(dataSource);
+                    });
+                })
+                .catch(error => {
+                    console.log(`Error loading GeoJSON file: ${error}`);
+                });
+
+        });
+    </script>
+</body>
+</html>

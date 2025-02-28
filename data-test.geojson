@@ -1,0 +1,49 @@
+{
+    "type": "FeatureCollection",
+    "features": [
+        {
+            "type": "Feature",
+            "properties": {
+                "@id": "way/865554208",
+                "building": "yes"
+            },
+            "geometry": {
+                "type": "Polygon",
+                "coordinates": [
+                    [
+                        [80.5651717, 16.4211817],
+                        [80.5653112, 16.4211457],
+                        [80.5654228, 16.42151],
+                        [80.5653005, 16.4215481],
+                        [80.5651717, 16.4211817]
+                    ]
+                ]
+            },
+            "id": "way/865554208"
+        },
+        {
+            "type": "Feature",
+            "properties": {
+                "@id": "AP TIDCO HOUSE, Mangalagiri",
+                "video": "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4"
+            },
+            "geometry": {
+                "coordinates": [80.56166189468263, 16.423260337662143],
+                "type": "Point"
+            },
+            "id": 564
+        },
+        {
+            "type": "Feature",
+            "properties": {
+                "@id": "Local Market, Mangalagiri",
+                "video": "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4"
+            },
+            "geometry": {
+                "coordinates": [80.5582027144427, 16.42365378111981],
+                "type": "Point"
+            },
+            "id": 565
+        }
+    ]
+}

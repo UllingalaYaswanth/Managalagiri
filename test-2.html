@@ -1,0 +1,470 @@
+<!-- <!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cesium - Display Building Names and Videos</title>
+    <script src="https://unpkg.com/cesium@latest/Build/Cesium/Cesium.js"></script>
+    <link href="https://unpkg.com/cesium@latest/Build/Cesium/Widgets/widgets.css" rel="stylesheet">
+    <style>
+        html, body, #cesiumContainer {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+        }
+    </style>
+</head>
+<body>
+    <div id="cesiumContainer"></div>
+
+    <script>
+        Cesium.createWorldTerrainAsync().then(terrainProvider => {
+            const viewer = new Cesium.Viewer('cesiumContainer', {
+                terrainProvider: terrainProvider,
+                sceneMode: Cesium.SceneMode.SCENE3D,
+            });
+
+            const zoomThreshold = 500;  // Zoom threshold in meters for showing labels
+
+            // GeoJSON Data URL
+            const geoJsonUrl = 'http://192.168.6.8:8081/data-test.geojson'; // Update this path if necessary
+
+            let geojsonData; // Store the loaded GeoJSON data globally
+
+            fetch(geoJsonUrl)
+                .then(response => response.json())
+                .then(data => {
+                    geojsonData = data; // Store the loaded GeoJSON data
+                    return Cesium.GeoJsonDataSource.load(geojsonData, {
+                        clampToGround: false  // Ensure buildings are rendered with height
+                    });
+                })
+                .then(dataSource => {
+                    viewer.dataSources.add(dataSource);
+                    const entities = dataSource.entities.values;
+
+                    // Store label entities for easy control later
+                    const buildingLabels = [];
+
+                    entities.forEach(entity => {
+                        // For polygon features (buildings)
+                        if (entity.polygon) {
+                            const buildingName = entity.properties['@id'] || 'Unknown Building';
+
+                            // Get the centroid of the polygon to place the label above
+                            const positions = entity.polygon.hierarchy.getValue(Cesium.JulianDate.now()).positions;
+                            const center = Cesium.Cartesian3.fromDegrees(
+                                Cesium.Math.toDegrees(Cesium.Cartographic.fromCartesian(positions[0]).longitude),
+                                Cesium.Math.toDegrees(Cesium.Cartographic.fromCartesian(positions[0]).latitude),
+                                0
+                            );
+
+                            // Add the label above the building at the centroid
+                            const labelEntity = viewer.entities.add({
+                                position: center,
+                                label: {
+                                    text: buildingName,
+                                    font: '14px sans-serif',
+                                    fillColor: Cesium.Color.WHITE,
+                                    scale: 1.5,
+                                    pixelOffset: new Cesium.Cartesian2(0, -30), // Offset the label above the building
+                                    show: false // Initially hide the label
+                                }
+                            });
+
+                            // Store label entity
+                            buildingLabels.push(labelEntity);
+
+                            // Set height extrusion for the building (we assume a height of 10 meters if not provided)
+                            const height = entity.properties.height ? entity.properties.height.getValue() : 10;
+                            entity.polygon.extrudedHeight = height;
+                            entity.polygon.material = Cesium.Color.BLUE.withAlpha(0.6);
+                            entity.polygon.outline = true;
+                            entity.polygon.outlineColor = Cesium.Color.BLACK;
+                        }
+
+                        // For point features (anchors), add a video popup
+                        if (entity.position && entity.properties.video) {
+                            const videoUrl = entity.properties.video;
+
+                            // Set the description with HTML for the video
+                            entity.description = ` 
+                                <h3>${entity.properties['@id']}</h3>
+                                <video width="320" height="240" controls>
+                                    <source src="${videoUrl}" type="video/mp4">
+                                    Your browser does not support the video tag.
+                                </video>
+                            `;
+                        }
+                    });
+
+                    // Function to check zoom level and toggle label visibility
+                    function checkZoomLevel() {
+                        const cameraHeight = viewer.camera.positionCartographic.height;
+                        buildingLabels.forEach(labelEntity => {
+                            if (cameraHeight < zoomThreshold) {
+                                labelEntity.label.show = true; // Show the label
+                            } else {
+                                labelEntity.label.show = false; // Hide the label
+                            }
+                        });
+                    }
+
+                    // Monitor camera movement
+                    viewer.camera.changed.addEventListener(checkZoomLevel);
+
+                    // Initial check
+                    checkZoomLevel();
+
+                    // Zoom to the entire data source
+                    viewer.zoomTo(dataSource);
+                })
+                .catch(error => {
+                    console.log(`Error loading GeoJSON file: ${error}`);
+                });
+
+            // Add click event listener to the viewer for adding new anchors
+            viewer.screenSpaceEventHandler.setInputAction((click) => {
+                const pickedObject = viewer.scene.pick(click.position);
+                if (!pickedObject) {
+                    // Get the clicked position on the globe
+                    const cartesian = viewer.camera.pickEllipsoid(click.position, viewer.scene.globe.ellipsoid);
+                    if (cartesian) {
+                        const cartographic = Cesium.Cartographic.fromCartesian(cartesian);
+                        const longitude = Cesium.Math.toDegrees(cartographic.longitude);
+                        const latitude = Cesium.Math.toDegrees(cartographic.latitude);
+
+                        // Prompt the user for the anchor name and video URL
+                        const name = prompt("Enter the name of the anchor:");
+                        if (name) {
+                            const videoUrl = prompt("Enter the video URL for the anchor:");
+                            if (videoUrl) {
+                                // Add the new anchor to the GeoJSON data
+                                const newFeature = {
+                                    type: "Feature",
+                                    properties: {
+                                        "@id": name,
+                                        video: videoUrl
+                                    },
+                                    geometry: {
+                                        type: "Point",
+                                        coordinates: [longitude, latitude]
+                                    },
+                                    id: Date.now() // Use a unique ID (timestamp for simplicity)
+                                };
+
+                                geojsonData.features.push(newFeature);
+
+                                // Add the new anchor to the Cesium viewer
+                                viewer.entities.add({
+                                    position: Cesium.Cartesian3.fromDegrees(longitude, latitude),
+                                    description: `
+                                        <h3>${name}</h3>
+                                        <video width="320" height="240" controls>
+                                            <source src="${videoUrl}" type="video/mp4">
+                                            Your browser does not support the video tag.
+                                        </video>
+                                    `
+                                });
+
+                                // Save the updated GeoJSON data back to the server
+                                saveGeoJsonData(geojsonData);
+                            }
+                        }
+                    }
+                }
+            }, Cesium.ScreenSpaceEventType.LEFT_CLICK);
+
+            // Function to save the updated GeoJSON data to the server
+//             function saveGeoJsonData(data) {
+//     fetch('http://192.168.6.8:8081/save-geojson', {
+//         method: 'POST',
+//         headers: {
+//             'Content-Type': 'application/json'
+//         },
+//         body: JSON.stringify(data)
+//     })
+//     .then(response => {
+//         if (response.ok) {
+//             console.log("GeoJSON data saved successfully.");
+//         } else {
+//             console.error("Failed to save GeoJSON data.");
+//         }
+//     })
+//     .catch(error => {
+//         console.error("Error saving GeoJSON data:", error);
+//     });
+// }
+
+function saveGeoJsonData(data) {
+    localStorage.setItem('geojsonData-', JSON.stringify(data));
+    console.log("GeoJSON data saved to localStorage.");
+}
+        });
+    </script>
+</body>
+</html> -->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cesium - Display Building Names and Videos</title>
+    <script src="https://unpkg.com/cesium@latest/Build/Cesium/Cesium.js"></script>
+    <link href="https://unpkg.com/cesium@latest/Build/Cesium/Widgets/widgets.css" rel="stylesheet">
+    <style>
+        html, body, #cesiumContainer {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+        }
+
+        /* Style for the add anchor button */
+        #addAnchorButton {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            z-index: 1000;
+            padding: 10px 20px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        /* Style for the modal */
+        #addAnchorModal {
+            display: none;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            z-index: 1001;
+        }
+
+        #addAnchorModal input, #addAnchorModal button {
+            display: block;
+            margin: 10px 0;
+            padding: 10px;
+            width: 100%;
+        }
+    </style>
+</head>
+<body>
+    <div id="cesiumContainer"></div>
+    <button id="addAnchorButton">Add Anchor</button>
+
+    <div id="addAnchorModal">
+        <h3>Add New Anchor</h3>
+        <input type="text" id="anchorName" placeholder="Enter anchor name">
+        <input type="text" id="videoUrl" placeholder="Enter video URL">
+        <button id="saveAnchor">Save</button>
+        <button id="cancelAnchor">Cancel</button>
+    </div>
+
+    <script>
+        Cesium.createWorldTerrainAsync().then(terrainProvider => {
+            const viewer = new Cesium.Viewer('cesiumContainer', {
+                terrainProvider: terrainProvider,
+                sceneMode: Cesium.SceneMode.SCENE3D,
+            });
+
+            const zoomThreshold = 500;  // Zoom threshold in meters for showing labels
+
+            // GeoJSON Data URL
+            const geoJsonUrl = 'http://192.168.6.8:8081/data-test.geojson'; // Update this path if necessary
+
+            let geojsonData; // Store the loaded GeoJSON data globally
+
+            fetch(geoJsonUrl)
+                .then(response => response.json())
+                .then(data => {
+                    geojsonData = data; // Store the loaded GeoJSON data
+                    return Cesium.GeoJsonDataSource.load(geojsonData, {
+                        clampToGround: false  // Ensure buildings are rendered with height
+                    });
+                })
+                .then(dataSource => {
+                    viewer.dataSources.add(dataSource);
+                    const entities = dataSource.entities.values;
+
+                    // Store label entities for easy control later
+                    const buildingLabels = [];
+
+                    entities.forEach(entity => {
+                        // For polygon features (buildings)
+                        if (entity.polygon) {
+                            const buildingName = entity.properties['@id'] || 'Unknown Building';
+
+                            // Get the centroid of the polygon to place the label above
+                            const positions = entity.polygon.hierarchy.getValue(Cesium.JulianDate.now()).positions;
+                            const center = Cesium.Cartesian3.fromDegrees(
+                                Cesium.Math.toDegrees(Cesium.Cartographic.fromCartesian(positions[0]).longitude),
+                                Cesium.Math.toDegrees(Cesium.Cartographic.fromCartesian(positions[0]).latitude),
+                                0
+                            );
+
+                            // Add the label above the building at the centroid
+                            const labelEntity = viewer.entities.add({
+                                position: center,
+                                label: {
+                                    text: buildingName,
+                                    font: '14px sans-serif',
+                                    fillColor: Cesium.Color.WHITE,
+                                    scale: 1.5,
+                                    pixelOffset: new Cesium.Cartesian2(0, -30), // Offset the label above the building
+                                    show: false // Initially hide the label
+                                }
+                            });
+
+                            // Store label entity
+                            buildingLabels.push(labelEntity);
+
+                            // Set height extrusion for the building (we assume a height of 10 meters if not provided)
+                            const height = entity.properties.height ? entity.properties.height.getValue() : 10;
+                            entity.polygon.extrudedHeight = height;
+                            entity.polygon.material = Cesium.Color.BLUE.withAlpha(0.6);
+                            entity.polygon.outline = true;
+                            entity.polygon.outlineColor = Cesium.Color.BLACK;
+                        }
+
+                        // For point features (anchors), add a video popup
+                        if (entity.position && entity.properties.video) {
+                            const videoUrl = entity.properties.video;
+
+                            // Set the description with HTML for the video
+                            entity.description = ` 
+                                <h3>${entity.properties['@id']}</h3>
+                                <video width="320" height="240" controls>
+                                    <source src="${videoUrl}" type="video/mp4">
+                                    Your browser does not support the video tag.
+                                </video>
+                            `;
+                        }
+                    });
+
+                    // Function to check zoom level and toggle label visibility
+                    function checkZoomLevel() {
+                        const cameraHeight = viewer.camera.positionCartographic.height;
+                        buildingLabels.forEach(labelEntity => {
+                            if (cameraHeight < zoomThreshold) {
+                                labelEntity.label.show = true; // Show the label
+                            } else {
+                                labelEntity.label.show = false; // Hide the label
+                            }
+                        });
+                    }
+
+                    // Monitor camera movement
+                    viewer.camera.changed.addEventListener(checkZoomLevel);
+
+                    // Initial check
+                    checkZoomLevel();
+
+                    // Zoom to the entire data source
+                    viewer.zoomTo(dataSource);
+                })
+                .catch(error => {
+                    console.log(`Error loading GeoJSON file: ${error}`);
+                });
+
+            // Add click event listener to the "Add Anchor" button
+            document.getElementById('addAnchorButton').addEventListener('click', () => {
+                document.getElementById('addAnchorModal').style.display = 'block';
+            });
+
+            // Add click event listener to the "Cancel" button
+            document.getElementById('cancelAnchor').addEventListener('click', () => {
+                document.getElementById('addAnchorModal').style.display = 'none';
+            });
+
+            // Add click event listener to the "Save" button
+            document.getElementById('saveAnchor').addEventListener('click', () => {
+                const name = document.getElementById('anchorName').value;
+                const videoUrl = document.getElementById('videoUrl').value;
+
+                if (name && videoUrl) {
+                    // Get the current camera position (center of the map)
+                    const cartesian = viewer.camera.position;
+                    const cartographic = Cesium.Cartographic.fromCartesian(cartesian);
+                    const longitude = Cesium.Math.toDegrees(cartographic.longitude);
+                    const latitude = Cesium.Math.toDegrees(cartographic.latitude);
+
+                    // Add the new anchor to the GeoJSON data
+                    const newFeature = {
+                        type: "Feature",
+                        properties: {
+                            "@id": name,
+                            video: videoUrl
+                        },
+                        geometry: {
+                            type: "Point",
+                            coordinates: [longitude, latitude]
+                        },
+                        id: Date.now() // Use a unique ID (timestamp for simplicity)
+                    };
+
+                    geojsonData.features.push(newFeature);
+
+                    // Add the new anchor to the Cesium viewer
+                    viewer.entities.add({
+                        position: Cesium.Cartesian3.fromDegrees(longitude, latitude),
+                        description: `
+                            <h3>${name}</h3>
+                            <video width="320" height="240" controls>
+                                <source src="${videoUrl}" type="video/mp4">
+                                Your browser does not support the video tag.
+                            </video>
+                        `
+                    });
+
+                    // Save the updated GeoJSON data back to the server
+                    saveGeoJsonData(geojsonData);
+
+                    // Hide the modal
+                    document.getElementById('addAnchorModal').style.display = 'none';
+                } else {
+                    alert("Please enter both the anchor name and video URL.");
+                }
+            });
+            // Function to reload GeoJSON data in Cesium
+function reloadGeoJson() {
+    fetch(geoJsonUrl)
+        .then(response => response.json())
+        .then(data => {
+            viewer.dataSources.removeAll(); // Remove old data
+            Cesium.GeoJsonDataSource.load(data, { clampToGround: false }).then((dataSource) => {
+                viewer.dataSources.add(dataSource);
+            });
+        })
+        .catch(error => console.error("Error loading GeoJSON:", error));
+}
+
+// Function to save new anchor and reload GeoJSON
+function saveAnchorAndReload(anchorData) {
+    fetch('/save-geojson', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(anchorData)
+    })
+    .then(response => response.json())
+    .then(data => {
+        console.log("GeoJSON saved:", data);
+        reloadGeoJson(); // Reload the GeoJSON after saving
+    })
+    .catch(error => console.error("Error saving GeoJSON:", error));
+}
+
+        });
+    </script>
+</body>
+</html>
+

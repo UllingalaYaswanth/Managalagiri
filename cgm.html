@@ -1,0 +1,1388 @@
+<!-- <!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cesium - Modify GeoJSON Height</title>
+    <script src="https://unpkg.com/cesium@latest/Build/Cesium/Cesium.js"></script>
+    <link href="https://unpkg.com/cesium@latest/Build/Cesium/Widgets/widgets.css" rel="stylesheet">
+    <style>
+        html, body, #cesiumContainer {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+        }
+    </style>
+</head>
+<body>
+    <div id="cesiumContainer"></div>
+
+    <script>
+        // Initialize Cesium Viewer
+        const viewer = new Cesium.Viewer('cesiumContainer');
+
+        // Your sample GeoJSON data
+        const geojsonData = {
+            "type": "FeatureCollection",
+            "features": [
+                {
+                    "type": "Feature",
+                    "properties": {
+                        "@id": "way/865554208",
+                        "building": "yes"
+                    },
+                    "geometry": {
+                        "type": "Polygon",
+                        "coordinates": [
+                            [
+                                [80.5651717, 16.4211817],
+                                [80.5653112, 16.4211457],
+                                [80.5654228, 16.42151],
+                                [80.5653005, 16.4215481],
+                                [80.5651717, 16.4211817]
+                            ]
+                        ]
+                    },
+                    "id": "way/865554208"
+                },
+                {
+                    "type": "Feature",
+                    "properties": {
+                        "@id": "AP TIDCO HOUSE, Mangalagiri",
+                        "video": "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4"
+                    },
+                    "geometry": {
+                        "coordinates": [80.56166189468263, 16.423260337662143],
+                        "type": "Point"
+                    },
+                    "id": 564
+                },
+                {
+                    "type": "Feature",
+                    "properties": {
+                        "@id": "Local Market, Mangalagiri",
+                        "video": "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4"
+                    },
+                    "geometry": {
+                        "coordinates": [80.5582027144427, 16.42365378111981],
+                        "type": "Point"
+                    },
+                    "id": 565
+                }
+            ]
+        };
+
+        // Function to modify Z (height) of each coordinate
+        function increaseHeight(geojson, heightIncrease) {
+            geojson.features.forEach(feature => {
+                if (feature.geometry.type === 'Point') {
+                    let coords = feature.geometry.coordinates;
+                    coords.push(heightIncrease);  // Add Z (height) value
+                }
+                else if (feature.geometry.type === 'Polygon' || feature.geometry.type === 'MultiPolygon') {
+                    feature.geometry.coordinates.forEach(ring => {
+                        ring.forEach(coord => {
+                            coord.push(heightIncrease);  // Add Z (height) value for each coordinate
+                        });
+                    });
+                }
+            });
+        }
+
+        // Increase height of all points and polygons by 100 meters
+        increaseHeight(geojsonData,10);
+
+        // Add the modified GeoJSON data to Cesium viewer
+        const geoJsonDataSource = new Cesium.GeoJsonDataSource();
+        viewer.dataSources.add(geoJsonDataSource);
+        geoJsonDataSource.load(geojsonData);
+
+        // Set camera to view the added features
+        viewer.zoomTo(geoJsonDataSource);
+    </script>
+</body>
+</html> -->
+<!-- 
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cesium - Modify Building Height</title>
+    <script src="https://unpkg.com/cesium@latest/Build/Cesium/Cesium.js"></script>
+    <link href="https://unpkg.com/cesium@latest/Build/Cesium/Widgets/widgets.css" rel="stylesheet">
+    <style>
+        html, body, #cesiumContainer {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+        }
+    </style>
+</head>
+<body>
+    <div id="cesiumContainer"></div>
+
+    <script>
+        // Initialize Cesium Viewer
+        const viewer = new Cesium.Viewer('cesiumContainer');
+
+        // Your sample GeoJSON data
+        const geojsonData = {
+            "type": "FeatureCollection",
+            "features": [
+                {
+                    "type": "Feature",
+                    "properties": {
+                        "@id": "way/865554208",
+                        "building": "yes"
+                    },
+                    "geometry": {
+                        "type": "Polygon",
+                        "coordinates": [
+                            [
+                                [80.5651717, 16.4211817],
+                                [80.5653112, 16.4211457],
+                                [80.5654228, 16.42151],
+                                [80.5653005, 16.4215481],
+                                [80.5651717, 16.4211817]
+                            ]
+                        ]
+                    },
+                    "id": "way/865554208"
+                },
+                {
+                    "type": "Feature",
+                    "properties": {
+                        "@id": "AP TIDCO HOUSE, Mangalagiri",
+                        "video": "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4"
+                    },
+                    "geometry": {
+                        "coordinates": [80.56166189468263, 16.423260337662143],
+                        "type": "Point"
+                    },
+                    "id": 564
+                },
+                {
+                    "type": "Feature",
+                    "properties": {
+                        "@id": "Local Market, Mangalagiri",
+                        "video": "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4"
+                    },
+                    "geometry": {
+                        "coordinates": [80.5582027144427, 16.42365378111981],
+                        "type": "Point"
+                    },
+                    "id": 565
+                }
+            ]
+        };
+
+        // Function to modify Z (height) of each coordinate only for buildings
+        function increaseBuildingHeight(geojson, heightIncrease) {
+            geojson.features.forEach(feature => {
+                // Check if the feature is a building
+                if (feature.properties.building === "yes") {
+                    if (feature.geometry.type === 'Point') {
+                        let coords = feature.geometry.coordinates;
+                        coords.push(heightIncrease);  // Add Z (height) value for Point
+                    }
+                    else if (feature.geometry.type === 'Polygon' || feature.geometry.type === 'MultiPolygon') {
+                        feature.geometry.coordinates.forEach(ring => {
+                            ring.forEach(coord => {
+                                coord.push(heightIncrease);  // Add Z (height) value for Polygon
+                            });
+                        });
+                    }
+                }
+            });
+        }
+
+        // Increase height of building features only by 50 meters
+        increaseBuildingHeight(geojsonData, 10);
+
+        // Add the modified GeoJSON data to Cesium viewer
+        const geoJsonDataSource = new Cesium.GeoJsonDataSource();
+        viewer.dataSources.add(geoJsonDataSource);
+        geoJsonDataSource.load(geojsonData);
+
+        // Set camera to view the added features
+        viewer.zoomTo(geoJsonDataSource);
+    </script>
+</body>
+</html> -->
+
+
+<!-- <!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cesium - Display Building Heights</title>
+    <script src="https://unpkg.com/cesium@latest/Build/Cesium/Cesium.js"></script>
+    <link href="https://unpkg.com/cesium@latest/Build/Cesium/Widgets/widgets.css" rel="stylesheet">
+    <style>
+        html, body, #cesiumContainer {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+        }
+    </style>
+</head>
+<body>
+    <div id="cesiumContainer"></div>
+
+    <script>
+        // Initialize Cesium Viewer
+        const viewer = new Cesium.Viewer('cesiumContainer');
+
+        // Sample GeoJSON data
+        const geojsonData = {
+            "type": "FeatureCollection",
+            "features": [
+                {
+                    "type": "Feature",
+                    "properties": {
+                        "@id": "way/865554208",
+                        "building": "yes",
+                        "height": 50  // Add height property to the building
+                    },
+                    "geometry": {
+                        "type": "Polygon",
+                        "coordinates": [
+                            [
+                                [80.5651717, 16.4211817],
+                                [80.5653112, 16.4211457],
+                                [80.5654228, 16.42151],
+                                [80.5653005, 16.4215481],
+                                [80.5651717, 16.4211817]
+                            ]
+                        ]
+                    },
+                    "id": "way/865554208"
+                },
+                {
+                    "type": "Feature",
+                    "properties": {
+                        "@id": "AP TIDCO HOUSE, Mangalagiri",
+                        "video": "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4",
+                        "height": 30  // Add height property
+                    },
+                    "geometry": {
+                        "coordinates": [80.56166189468263, 16.423260337662143],
+                        "type": "Point"
+                    },
+                    "id": 564
+                },
+                {
+                    "type": "Feature",
+                    "properties": {
+                        "@id": "Local Market, Mangalagiri",
+                        "video": "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
+                        "height": 25  // Add height property
+                    },
+                    "geometry": {
+                        "coordinates": [80.5582027144427, 16.42365378111981],
+                        "type": "Point"
+                    },
+                    "id": 565
+                }
+            ]
+        };
+
+        // Function to modify Z (height) of each coordinate only for buildings
+        function increaseBuildingHeight(geojson, heightIncrease) {
+            geojson.features.forEach(feature => {
+                // Check if the feature is a building
+                if (feature.properties.building === "yes") {
+                    if (feature.geometry.type === 'Point') {
+                        let coords = feature.geometry.coordinates;
+                        coords.push(heightIncrease);  // Add Z (height) value for Point
+                    }
+                    else if (feature.geometry.type === 'Polygon' || feature.geometry.type === 'MultiPolygon') {
+                        feature.geometry.coordinates.forEach(ring => {
+                            ring.forEach(coord => {
+                                coord.push(heightIncrease);  // Add Z (height) value for Polygon
+                            });
+                        });
+                    }
+                }
+            });
+        }
+
+        // Increase height of building features by 50 meters
+        increaseBuildingHeight(geojsonData, 50);
+
+        // Add the modified GeoJSON data to Cesium viewer
+        const geoJsonDataSource = new Cesium.GeoJsonDataSource();
+        viewer.dataSources.add(geoJsonDataSource);
+        geoJsonDataSource.load(geojsonData);
+
+        // Add Cesium OSM buildings to the scene as our example 3D Tileset
+        const osmBuildingsTileset = await Cesium.createOsmBuildingsAsync();
+        viewer.scene.primitives.add(osmBuildingsTileset);
+
+        // Set the camera to view the added features
+        viewer.zoomTo(geoJsonDataSource);
+
+        // Add a custom style to show building height in 3D Tiles
+        osmBuildingsTileset.style = new Cesium.Cesium3DTileStyle({
+            color: "color('white')",  // Default color for buildings
+            show: "true",             // Show all buildings
+            label: {
+                text: "${height}",     // Extract height data from the building properties
+                font: "14px sans-serif",
+                fillColor: "white",
+                outlineColor: "black",
+                outlineWidth: 3,
+                style: "FILL_AND_OUTLINE",
+                verticalOrigin: "CENTER",
+                horizontalOrigin: "CENTER",
+                pixelOffset: {
+                    x: 0,
+                    y: -20,  // Offset the label slightly above the building
+                },
+            },
+        });
+    </script>
+</body>
+</html> -->
+
+
+<!-- <!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cesium - Display Building Heights</title>
+    <script src="https://unpkg.com/cesium@latest/Build/Cesium/Cesium.js"></script>
+    <link href="https://unpkg.com/cesium@latest/Build/Cesium/Widgets/widgets.css" rel="stylesheet">
+    <style>
+        html, body, #cesiumContainer {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+        }
+    </style>
+</head>
+<body>
+    <div id="cesiumContainer"></div>
+
+    <script>
+        async function initializeCesium() {
+            // Initialize Cesium Viewer
+            const viewer = new Cesium.Viewer('cesiumContainer');
+
+            // Sample GeoJSON data
+            const geojsonData = {
+                "type": "FeatureCollection",
+                "features": [
+                    {
+                        "type": "Feature",
+                        "properties": {
+                            "@id": "way/865554208",
+                            "building": "yes",
+                            "height": 50  // Add height property to the building
+                        },
+                        "geometry": {
+                            "type": "Polygon",
+                            "coordinates": [
+                                [
+                                    [80.5651717, 16.4211817],
+                                    [80.5653112, 16.4211457],
+                                    [80.5654228, 16.42151],
+                                    [80.5653005, 16.4215481],
+                                    [80.5651717, 16.4211817]
+                                ]
+                            ]
+                        },
+                        "id": "way/865554208"
+                    },
+                    {
+                        "type": "Feature",
+                        "properties": {
+                            "@id": "AP TIDCO HOUSE, Mangalagiri",
+                            "video": "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4",
+                            "height": 30  // Add height property
+                        },
+                        "geometry": {
+                            "coordinates": [80.56166189468263, 16.423260337662143],
+                            "type": "Point"
+                        },
+                        "id": 564
+                    },
+                    {
+                        "type": "Feature",
+                        "properties": {
+                            "@id": "Local Market, Mangalagiri",
+                            "video": "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
+                            "height": 25  // Add height property
+                        },
+                        "geometry": {
+                            "coordinates": [80.5582027144427, 16.42365378111981],
+                            "type": "Point"
+                        },
+                        "id": 565
+                    }
+                ]
+            };
+
+            // Function to modify Z (height) of each coordinate only for buildings
+            function increaseBuildingHeight(geojson, heightIncrease) {
+                geojson.features.forEach(feature => {
+                    // Check if the feature is a building
+                    if (feature.properties.building === "yes") {
+                        if (feature.geometry.type === 'Point') {
+                            let coords = feature.geometry.coordinates;
+                            coords.push(heightIncrease);  // Add Z (height) value for Point
+                        }
+                        else if (feature.geometry.type === 'Polygon' || feature.geometry.type === 'MultiPolygon') {
+                            feature.geometry.coordinates.forEach(ring => {
+                                ring.forEach(coord => {
+                                    coord.push(heightIncrease);  // Add Z (height) value for Polygon
+                                });
+                            });
+                        }
+                    }
+                });
+            }
+
+            // Increase height of building features by 50 meters
+            increaseBuildingHeight(geojsonData, 0);
+
+            // Add the modified GeoJSON data to Cesium viewer
+            const geoJsonDataSource = new Cesium.GeoJsonDataSource();
+            viewer.dataSources.add(geoJsonDataSource);
+            geoJsonDataSource.load(geojsonData);
+
+            // Add Cesium OSM buildings to the scene as our example 3D Tileset
+            const osmBuildingsTileset = await Cesium.createOsmBuildingsAsync();
+            viewer.scene.primitives.add(osmBuildingsTileset);
+
+            // Set the camera to view the added features
+            viewer.zoomTo(geoJsonDataSource);
+
+            // Add a custom style to show building height in 3D Tiles
+            osmBuildingsTileset.style = new Cesium.Cesium3DTileStyle({
+                color: "color('white')",  // Default color for buildings
+                show: "true",             // Show all buildings
+                label: {
+                    text: "${height}",     // Extract height data from the building properties
+                    font: "14px sans-serif",
+                    fillColor: "white",
+                    outlineColor: "black",
+                    outlineWidth: 5,
+                    style: "FILL_AND_OUTLINE",
+                    verticalOrigin: "CENTER",
+                    horizontalOrigin: "CENTER",
+                    pixelOffset: {
+                        x: 0,
+                        y: -20,  // Offset the label slightly above the building
+                    },
+                },
+            });
+        }
+
+        // Call the initialize function
+        initializeCesium();
+    </script>
+</body>
+</html> -->
+
+
+<!-- <!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cesium - Modify and Display Building Height</title>
+    <script src="https://unpkg.com/cesium@latest/Build/Cesium/Cesium.js"></script>
+    <link href="https://unpkg.com/cesium@latest/Build/Cesium/Widgets/widgets.css" rel="stylesheet">
+    <style>
+        html, body, #cesiumContainer {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+        }
+        .infoPanel {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: rgba(255, 255, 255, 0.8);
+            padding: 10px;
+            border-radius: 5px;
+            font-family: Arial, sans-serif;
+        }
+    </style>
+</head>
+<body>
+    <div id="cesiumContainer"></div>
+    <div class="infoPanel">
+        <label for="dropdown">Choose a styling option:</label>
+        <select id="dropdown">
+            <option value="material">Color By Material</option>
+            <option value="distance">Color By Distance</option>
+            <option value="residential">Highlight Residential Buildings</option>
+            <option value="office">Show Only Office Buildings</option>
+            <option value="apartments">Show Only Apartment Buildings</option>
+        </select>
+    </div>
+
+    <script>
+        // Initialize Cesium Viewer
+        const viewer = new Cesium.Viewer("cesiumContainer", {
+            terrain: Cesium.Terrain.fromWorldTerrain(),
+        });
+        const handler = new Cesium.ScreenSpaceEventHandler(viewer.scene.canvas);
+
+        // Add Cesium OSM Buildings
+        async function loadOsmBuildings() {
+            const osmBuildingsTileset = await Cesium.createOsmBuildingsAsync();
+            viewer.scene.primitives.add(osmBuildingsTileset);
+
+            // Initial camera view
+            viewer.scene.camera.setView({
+                destination: Cesium.Cartesian3.fromDegrees(-122.3472, 47.598, 370),
+                orientation: {
+                    heading: Cesium.Math.toRadians(10),
+                    pitch: Cesium.Math.toRadians(-10),
+                },
+            });
+
+            return osmBuildingsTileset;
+        }
+
+        let osmBuildingsTileset;
+        loadOsmBuildings().then((tileset) => {
+            osmBuildingsTileset = tileset;
+            colorByMaterial(); // Apply default styling
+        });
+
+        // GeoJSON Data (Buildings + Video Markers)
+        const geojsonData = {
+            "type": "FeatureCollection",
+            "features": [
+                {
+                    "type": "Feature",
+                    "properties": {
+                        "@id": "way/865554208",
+                        "building": "yes",
+                        "height": 50  // Add height property
+                    },
+                    "geometry": {
+                        "type": "Polygon",
+                        "coordinates": [
+                            [
+                                [80.5651717, 16.4211817],
+                                [80.5653112, 16.4211457],
+                                [80.5654228, 16.42151],
+                                [80.5653005, 16.4215481],
+                                [80.5651717, 16.4211817]
+                            ]
+                        ]
+                    }
+                }
+            ]
+        };
+
+        // Modify building height in GeoJSON
+        function increaseBuildingHeight(geojson, heightIncrease) {
+            geojson.features.forEach(feature => {
+                if (feature.properties.building === "yes") {
+                    if (feature.geometry.type === 'Polygon') {
+                        feature.geometry.coordinates.forEach(ring => {
+                            ring.forEach(coord => {
+                                coord.push(heightIncrease);
+                            });
+                        });
+                    }
+                }
+            });
+        }
+
+        // Apply height modification
+        increaseBuildingHeight(geojsonData, 10);
+
+        // Load modified GeoJSON into Cesium
+        const geoJsonDataSource = new Cesium.GeoJsonDataSource();
+        viewer.dataSources.add(geoJsonDataSource);
+        geoJsonDataSource.load(geojsonData);
+        viewer.zoomTo(geoJsonDataSource);
+
+        // Styling Functions
+        function colorByMaterial() {
+            if (osmBuildingsTileset) {
+                osmBuildingsTileset.style = new Cesium.Cesium3DTileStyle({
+                    defines: {
+                        material: "${feature['building:material']}",
+                    },
+                    color: {
+                        conditions: [
+                            ["${material} === null", "color('white')"],
+                            ["${material} === 'glass'", "color('skyblue', 0.5)"],
+                            ["${material} === 'concrete'", "color('grey')"],
+                            ["${material} === 'brick'", "color('indianred')"],
+                            ["${material} === 'stone'", "color('lightslategrey')"],
+                            ["${material} === 'metal'", "color('lightgrey')"],
+                            ["${material} === 'steel'", "color('lightsteelblue')"],
+                            ["true", "color('white')"],
+                        ],
+                    },
+                });
+            }
+        }
+
+        function highlightAllResidentialBuildings() {
+            if (osmBuildingsTileset) {
+                osmBuildingsTileset.style = new Cesium.Cesium3DTileStyle({
+                    color: {
+                        conditions: [
+                            ["${feature['building']} === 'apartments' || ${feature['building']} === 'residential'", "color('cyan', 0.9)"],
+                            ["true", "color('white')"],
+                        ],
+                    },
+                });
+            }
+        }
+
+        function showByBuildingType(buildingType) {
+            if (osmBuildingsTileset) {
+                osmBuildingsTileset.style = new Cesium.Cesium3DTileStyle({
+                    show: `/${feature['building']} === '${buildingType}'`,
+                });
+            }
+        }
+
+        function colorByDistanceToCoordinate(pickedLatitude, pickedLongitude) {
+            if (osmBuildingsTileset) {
+                osmBuildingsTileset.style = new Cesium.Cesium3DTileStyle({
+                    defines: {
+                        distance: `distance(vec2(/${feature['cesium#longitude']}, /${feature['cesium#latitude']}), vec2(${pickedLongitude},${pickedLatitude}))`,
+                    },
+                    color: {
+                        conditions: [
+                            ["${distance} > 0.014", "color('blue')"],
+                            ["${distance} > 0.010", "color('green')"],
+                            ["${distance} > 0.006", "color('yellow')"],
+                            ["${distance} > 0.0001", "color('red')"],
+                            ["true", "color('white')"],
+                        ],
+                    },
+                });
+            }
+        }
+
+        // Handle Dropdown Changes
+        document.getElementById("dropdown").onchange = function () {
+            const value = this.value;
+            if (value === "material") {
+                colorByMaterial();
+            } else if (value === "distance") {
+                colorByDistanceToCoordinate(47.62051, -122.34931);
+            } else if (value === "residential") {
+                highlightAllResidentialBuildings();
+            } else if (value === "office") {
+                showByBuildingType("office");
+            } else if (value === "apartments") {
+                showByBuildingType("apartments");
+            }
+        };
+    </script>
+</body>
+</html> -->
+
+
+<!-- <!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cesium - Modify Building Height</title>
+    <script src="https://unpkg.com/cesium@latest/Build/Cesium/Cesium.js"></script>
+    <link href="https://unpkg.com/cesium@latest/Build/Cesium/Widgets/widgets.css" rel="stylesheet">
+    <style>
+        html, body, #cesiumContainer {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+        }
+    </style>
+</head>
+<body>
+    <div id="cesiumContainer"></div>
+
+    <script>
+        Cesium.createWorldTerrainAsync().then(terrainProvider => {
+            const viewer = new Cesium.Viewer('cesiumContainer', {
+                terrainProvider: terrainProvider
+            });
+
+            // Sample GeoJSON with Heights
+            const geojsonData = {
+                "type": "FeatureCollection",
+                "features": [
+                    {
+                        "type": "Feature",
+                        "properties": {
+                            "@id": "way/865554208",
+                            "building": "yes",
+                            "height": 30  // Height in meters
+                        },
+                        "geometry": {
+                            "type": "Polygon",
+                            "coordinates": [
+                                [
+                                    [80.5651717, 16.4211817],
+                                    [80.5653112, 16.4211457],
+                                    [80.5654228, 16.42151],
+                                    [80.5653005, 16.4215481],
+                                    [80.5651717, 16.4211817]
+                                ]
+                            ]
+                        }
+                    }
+                ]
+            };
+
+            // Load GeoJSON into Cesium
+            Cesium.GeoJsonDataSource.load(geojsonData, {
+                clampToGround: false  // Ensure buildings are rendered with height
+            }).then(dataSource => {
+                viewer.dataSources.add(dataSource);
+                const entities = dataSource.entities.values;
+
+                // Set height extrusion for buildings
+                for (let i = 0; i < entities.length; i++) {
+                    const entity = entities[i];
+                    if (entity.polygon) {
+                        const height = entity.properties.height ? entity.properties.height.getValue() : 10; // Default height
+                        entity.polygon.extrudedHeight = height;
+                        entity.polygon.material = Cesium.Color.BLUE.withAlpha(0.6);
+                        entity.polygon.outline = true;
+                        entity.polygon.outlineColor = Cesium.Color.BLACK;
+                    }
+                }
+
+                viewer.zoomTo(dataSource);
+            });
+
+            // Add OSM Buildings for Reference
+            Cesium.createOsmBuildingsAsync().then(tileset => {
+    viewer.scene.primitives.add(tileset);
+
+    // Apply Styling Based on Height
+    tileset.style = new Cesium.Cesium3DTileStyle({
+        defines: {
+            height: "Boolean(${feature['cesium#height']}) ? Number(${feature['cesium#height']}) : 0"
+        },
+        color: {
+            conditions: [
+                ["${height} > 100", "color('red')"],
+                ["${height} > 50", "color('orange')"],
+                ["${height} > 30", "color('yellow')"],
+                ["${height} > 10", "color('green')"],
+                ["true", "color('blue')"]
+            ]
+        }
+    });
+});
+
+
+        });
+    </script>
+</body>
+</html> -->
+
+
+<!-- <!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cesium - Modify Building Height</title>
+    <script src="https://unpkg.com/cesium@latest/Build/Cesium/Cesium.js"></script>
+    <link href="https://unpkg.com/cesium@latest/Build/Cesium/Widgets/widgets.css" rel="stylesheet">
+    <style>
+        html, body, #cesiumContainer {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+        }
+    </style>
+</head>
+<body>
+    <div id="cesiumContainer"></div>
+
+    <script>
+        Cesium.createWorldTerrainAsync().then(terrainProvider => {
+            const viewer = new Cesium.Viewer('cesiumContainer', {
+                terrainProvider: terrainProvider
+            });
+
+            // Load local GeoJSON file (replace 'path_to_geojson' with the actual path to your file)
+            const geoJsonUrl = 'http://192.168.6.8:3000/export%20(1).geojson'; // Update this path
+
+            // Load the GeoJSON data from the local file
+            fetch(geoJsonUrl)
+                .then(response => response.json())
+                .then(geojsonData => {
+                    // Load GeoJSON into Cesium
+                    Cesium.GeoJsonDataSource.load(geojsonData, {
+                        clampToGround: false  // Ensure buildings are rendered with height
+                    }).then(dataSource => {
+                        viewer.dataSources.add(dataSource);
+                        const entities = dataSource.entities.values;
+
+                        // Set height extrusion for buildings from GeoJSON
+                        for (let i = 0; i < entities.length; i++) {
+                            const entity = entities[i];
+                            if (entity.polygon) {
+                                const height = entity.properties.height ? entity.properties.height.getValue() : 10; // Default height
+                                entity.polygon.extrudedHeight = height;
+                                entity.polygon.material = Cesium.Color.BLUE.withAlpha(0.6);
+                                entity.polygon.outline = true;
+                                entity.polygon.outlineColor = Cesium.Color.BLACK;
+
+                                // Apply color based on height
+                                const colorCondition = height > 100 ? Cesium.Color.RED :
+                                                      (height > 50 ? Cesium.Color.ORANGE :
+                                                      (height > 30 ? Cesium.Color.YELLOW :
+                                                      (height > 10 ? Cesium.Color.GREEN :
+                                                      Cesium.Color.BLACK)));
+                                entity.polygon.material = colorCondition.withAlpha(0.6);
+                            }
+                        }
+
+                        viewer.zoomTo(dataSource);
+                    });
+                })
+                .catch(error => {
+                    console.log(`Error loading GeoJSON file: ${error}`);
+                });
+        });
+    </script>
+</body>
+</html> -->
+<!-- 
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cesium - Modify Building Height with Name and Video</title>
+    <script src="https://unpkg.com/cesium@latest/Build/Cesium/Cesium.js"></script>
+    <link href="https://unpkg.com/cesium@latest/Build/Cesium/Widgets/widgets.css" rel="stylesheet">
+    <style>
+        html, body, #cesiumContainer {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+        }
+    </style>
+</head>
+<body>
+    <div id="cesiumContainer"></div>
+
+    <script>
+        Cesium.createWorldTerrainAsync().then(terrainProvider => {
+            const viewer = new Cesium.Viewer('cesiumContainer', {
+                terrainProvider: terrainProvider
+            });
+
+            // Load local GeoJSON file (replace 'path_to_geojson' with the actual path to your file)
+            const geoJsonUrl = 'http://192.168.6.8:3000/data.geojson'; // Update this path
+
+            // Load the GeoJSON data from the local file
+            fetch(geoJsonUrl)
+                .then(response => response.json())
+                .then(geojsonData => {
+                    // Load GeoJSON into Cesium
+                    Cesium.GeoJsonDataSource.load(geojsonData, {
+                        clampToGround: false  // Ensure buildings are rendered with height
+                    }).then(dataSource => {
+                        viewer.dataSources.add(dataSource);
+                        const entities = dataSource.entities.values;
+
+                        // Set height extrusion for buildings from GeoJSON
+                        for (let i = 0; i < entities.length; i++) {
+                            const entity = entities[i];
+                            if (entity.polygon) {
+                                const height = entity.properties.height ? entity.properties.height.getValue() : 10; // Default height
+                                entity.polygon.extrudedHeight = height;
+                                entity.polygon.material = Cesium.Color.BLUE.withAlpha(0.6);
+                                entity.polygon.outline = true;
+                                entity.polygon.outlineColor = Cesium.Color.BLACK;
+
+                                // Apply color based on height
+                                const colorCondition = height > 100 ? Cesium.Color.RED :
+                                                      (height > 50 ? Cesium.Color.ORANGE :
+                                                      (height > 30 ? Cesium.Color.YELLOW :
+                                                      (height > 10 ? Cesium.Color.GREEN :
+                                                      Cesium.Color.WHITE)));
+                                entity.polygon.material = colorCondition.withAlpha(0.6);
+
+                                // Add anchor tag for building name (only show on zoom-in)
+                                const buildingName = entity.properties['@id'] ? entity.properties['@id'].getValue() : 'Building'; // Default name
+
+                                // Bind a label with the building name
+                                entity.label = new Cesium.LabelGraphics({
+                                    text: buildingName,
+                                    font: 'bold 12px sans-serif',
+                                    fillColor: Cesium.Color.WHITE,
+                                    outlineColor: Cesium.Color.BLACK,
+                                    outlineWidth: 2,
+                                    horizontalOrigin: Cesium.HorizontalOrigin.CENTER,
+                                    verticalOrigin: Cesium.VerticalOrigin.BOTTOM,
+                                    pixelOffset: new Cesium.Cartesian2(0, -10)
+                                });
+                            }
+                            if (entity.point) {
+                                // For point features, bind a video popup (as before)
+                                const videoUrl = entity.properties.video ? entity.properties.video.getValue() : '';
+
+                                if (videoUrl) {
+                                    entity.description = `
+                                        <h3>${entity.properties['@id']}</h3>
+                                        <video width="320" height="240" controls>
+                                            <source src="${videoUrl}" type="video/mp4">
+                                            Your browser does not support the video tag.
+                                        </video>
+                                    `;
+                                }
+                            }
+                        }
+
+                        viewer.zoomTo(dataSource);
+                    });
+                })
+                .catch(error => {
+                    console.log(`Error loading GeoJSON file: ${error}`);
+                });
+        });
+    </script>
+</body>
+</html> -->
+
+
+<!-- <!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cesium - Modify Building Height with Name and Video</title>
+    <script src="https://unpkg.com/cesium@latest/Build/Cesium/Cesium.js"></script>
+    <link href="https://unpkg.com/cesium@latest/Build/Cesium/Widgets/widgets.css" rel="stylesheet">
+    <style>
+        html, body, #cesiumContainer {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+        }
+    </style>
+</head>
+<body>
+    <div id="cesiumContainer"></div>
+
+    <script>
+        Cesium.createWorldTerrainAsync().then(terrainProvider => {
+            const viewer = new Cesium.Viewer('cesiumContainer', {
+                terrainProvider: terrainProvider
+            });
+
+            // Load local GeoJSON file (replace 'path_to_geojson' with the actual path to your file)
+            const geoJsonUrl = 'http://192.168.6.8:3000/data.geojson'; // Update this path
+
+            // Load the GeoJSON data from the local file
+            fetch(geoJsonUrl)
+                .then(response => response.json())
+                .then(geojsonData => {
+                    // Load GeoJSON into Cesium
+                    Cesium.GeoJsonDataSource.load(geojsonData, {
+                        clampToGround: false  // Ensure buildings are rendered with height
+                    }).then(dataSource => {
+                        viewer.dataSources.add(dataSource);
+                        const entities = dataSource.entities.values;
+
+                        // Set height extrusion for buildings from GeoJSON
+                        for (let i = 0; i < entities.length; i++) {
+                            const entity = entities[i];
+                            if (entity.polygon) {
+                                const height = entity.properties.height ? entity.properties.height.getValue() : 10; // Default height
+                                entity.polygon.extrudedHeight = height;
+                                entity.polygon.material = Cesium.Color.BLUE.withAlpha(0.6);
+                                entity.polygon.outline = true;
+                                entity.polygon.outlineColor = Cesium.Color.BLACK;
+
+                                // Apply color based on height
+                                const colorCondition = height > 100 ? Cesium.Color.RED :
+                                                      (height > 50 ? Cesium.Color.ORANGE :
+                                                      (height > 30 ? Cesium.Color.YELLOW :
+                                                      (height > 10 ? Cesium.Color.GREEN :
+                                                      Cesium.Color.WHITE)));
+                                entity.polygon.material = colorCondition.withAlpha(0.6);
+
+                                // Add anchor tag for building name (only show on zoom-in)
+                                const buildingName = entity.properties.name ? entity.properties.name.getValue() : 'Building'; // Use 'name' property for building name
+
+                                // Bind a label with the building name
+                                entity.label = new Cesium.LabelGraphics({
+                                    text: buildingName,
+                                    font: 'bold 12px sans-serif',
+                                    fillColor: Cesium.Color.WHITE,
+                                    outlineColor: Cesium.Color.BLACK,
+                                    outlineWidth: 2,
+                                    horizontalOrigin: Cesium.HorizontalOrigin.CENTER,
+                                    verticalOrigin: Cesium.VerticalOrigin.BOTTOM,
+                                    pixelOffset: new Cesium.Cartesian2(0, -10),
+                                    heightReference: Cesium.HeightReference.RELATIVE_TO_GROUND  // Ensure the label is above the building
+                                });
+                            }
+                            if (entity.point) {
+                                // For point features, bind a video popup (as before)
+                                const videoUrl = entity.properties.video ? entity.properties.video.getValue() : '';
+
+                                if (videoUrl) {
+                                    entity.description = `
+                                        <h3>${entity.properties['@id']}</h3>
+                                        <video width="320" height="240" controls>
+                                            <source src="${videoUrl}" type="video/mp4">
+                                            Your browser does not support the video tag.
+                                        </video>
+                                    `;
+                                }
+                            }
+                        }
+
+                        viewer.zoomTo(dataSource);
+                    });
+                })
+                .catch(error => {
+                    console.log(`Error loading GeoJSON file: ${error}`);
+                });
+        });
+    </script>
+</body>
+</html> -->
+
+<!-- <!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cesium - Modify Building Height with Name and Video</title>
+    <script src="https://unpkg.com/cesium@latest/Build/Cesium/Cesium.js"></script>
+    <link href="https://unpkg.com/cesium@latest/Build/Cesium/Widgets/widgets.css" rel="stylesheet">
+    <style>
+        html, body, #cesiumContainer {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+        }
+    </style>
+</head>
+<body>
+    <div id="cesiumContainer"></div>
+
+    <script>
+        Cesium.createWorldTerrainAsync().then(terrainProvider => {
+            const viewer = new Cesium.Viewer('cesiumContainer', {
+                terrainProvider: terrainProvider
+            });
+
+            // Load local GeoJSON file (replace 'path_to_geojson' with the actual path to your file)
+            const geoJsonUrl = 'http://192.168.6.8:3000/data.geojson'; // Update this path
+
+            // Load the GeoJSON data from the local file
+            fetch(geoJsonUrl)
+                .then(response => response.json())
+                .then(geojsonData => {
+                    // Load GeoJSON into Cesium
+                    Cesium.GeoJsonDataSource.load(geojsonData, {
+                        clampToGround: false  // Ensure buildings are rendered with height
+                    }).then(dataSource => {
+                        viewer.dataSources.add(dataSource);
+                        const entities = dataSource.entities.values;
+
+                        // Set height extrusion for buildings from GeoJSON
+                        for (let i = 0; i < entities.length; i++) {
+                            const entity = entities[i];
+
+                            // Handle polygons (buildings)
+                            if (entity.polygon) {
+                                const height = 10; // Default height, as no height info is available in your GeoJSON
+                                entity.polygon.extrudedHeight = height;
+                                entity.polygon.material = Cesium.Color.BLUE.withAlpha(0.6);
+                                entity.polygon.outline = true;
+                                entity.polygon.outlineColor = Cesium.Color.BLACK;
+
+                                // Add building name (using @id as the name)
+                                const buildingName = entity.properties['@id'] ? entity.properties['@id'].getValue() : 'Building'; // Use '@id' as building name
+
+                                // Bind a label with the building name
+                                entity.label = new Cesium.LabelGraphics({
+                                    text: buildingName,
+                                    font: 'bold 12px sans-serif',
+                                    fillColor: Cesium.Color.WHITE,
+                                    outlineColor: Cesium.Color.BLACK,
+                                    outlineWidth: 2,
+                                    horizontalOrigin: Cesium.HorizontalOrigin.CENTER,
+                                    verticalOrigin: Cesium.VerticalOrigin.BOTTOM,
+                                    pixelOffset: new Cesium.Cartesian2(0, -10),
+                                    heightReference: Cesium.HeightReference.RELATIVE_TO_GROUND  // Ensure the label is above the building
+                                });
+                            }
+
+                            // Handle point features (locations with videos)
+                            if (entity.point) {
+                                const videoUrl = entity.properties.video ? entity.properties.video.getValue() : '';
+
+                                if (videoUrl) {
+                                    entity.description = `
+                                        <h3>${entity.properties['@id']}</h3>
+                                        <video width="320" height="240" controls>
+                                            <source src="${videoUrl}" type="video/mp4">
+                                            Your browser does not support the video tag.
+                                        </video>
+                                    `;
+                                }
+                            }
+                        }
+
+                        viewer.zoomTo(dataSource);
+                    });
+                })
+                .catch(error => {
+                    console.log(`Error loading GeoJSON file: ${error}`);
+                });
+        });
+    </script>
+</body>
+</html> -->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cesium - Modify Building Height with Name and Video</title>
+    <script src="https://unpkg.com/cesium@latest/Build/Cesium/Cesium.js"></script>
+    <link href="https://unpkg.com/cesium@latest/Build/Cesium/Widgets/widgets.css" rel="stylesheet">
+    <style>
+        html, body, #cesiumContainer {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+        }
+    </style>
+</head>
+<body>
+    <div id="cesiumContainer"></div>
+
+    <script>
+        Cesium.createWorldTerrainAsync().then(terrainProvider => {
+            const viewer = new Cesium.Viewer('cesiumContainer', {
+                terrainProvider: terrainProvider
+            });
+
+            // Load local GeoJSON file (replace 'path_to_geojson' with the actual path to your file)
+            const geoJsonUrl = 'http://192.168.6.8:8081/data.geojson'; // Update this path
+
+            // Load the GeoJSON data from the local file
+            fetch(geoJsonUrl)
+                .then(response => response.json())
+                .then(geojsonData => {
+                    // Load GeoJSON into Cesium
+                    Cesium.GeoJsonDataSource.load(geojsonData, {
+                        clampToGround: false  // Ensure buildings are rendered with height
+                    }).then(dataSource => {
+                        viewer.dataSources.add(dataSource);
+                        const entities = dataSource.entities.values;
+
+                        // Set height extrusion for buildings from GeoJSON
+                        for (let i = 0; i < entities.length; i++) {
+                            const entity = entities[i];
+
+                            // Handle polygons (buildings)
+                            if (entity.polygon) {
+                                const height = 10; // Default height, as no height info is available in your GeoJSON
+                                entity.polygon.extrudedHeight = height;
+                                entity.polygon.material = Cesium.Color.BLUE.withAlpha(0.6);
+                                entity.polygon.outline = true;
+                                entity.polygon.outlineColor = Cesium.Color.BLACK;
+
+                                // Add building name (using @id as the name)
+                                const buildingName = entity.properties['@id'] ? entity.properties['@id'].getValue() : 'Building'; // Use '@id' as building name
+
+                                // Bind a label with the building name
+                                entity.label = new Cesium.LabelGraphics({
+                                    text: buildingName,
+                                    font: 'bold 12px sans-serif',
+                                    fillColor: Cesium.Color.WHITE,
+                                    outlineColor: Cesium.Color.BLACK,
+                                    outlineWidth: 2,
+                                    horizontalOrigin: Cesium.HorizontalOrigin.CENTER,
+                                    verticalOrigin: Cesium.VerticalOrigin.BOTTOM,
+                                    pixelOffset: new Cesium.Cartesian2(0, -10),
+                                    heightReference: Cesium.HeightReference.RELATIVE_TO_GROUND  // Ensure the label is above the building
+                                });
+                            }
+
+                            // Handle point features (locations with videos)
+                            if (entity.point) {
+                                const videoUrl = entity.properties.video ? entity.properties.video.getValue() : '';
+
+                                if (videoUrl) {
+                                    entity.description = `
+                                        <h3>${entity.properties['@id']}</h3>
+                                        <video width="320" height="240" controls>
+                                            <source src="${videoUrl}" type="video/mp4">
+                                            Your browser does not support the video tag.
+                                        </video>
+                                    `;
+                                }
+                            }
+                        }
+
+                        viewer.zoomTo(dataSource);
+                    });
+                })
+                .catch(error => {
+                    console.log(`Error loading GeoJSON file: ${error}`);
+                });
+        });
+    </script>
+</body>
+</html>
+
+
+<!-- <!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cesium Map with Building Names and Videos</title>
+    <script src="https://unpkg.com/cesium@1.88/Build/Cesium/Cesium.js"></script>
+    <link href="https://unpkg.com/cesium@1.88/Build/Cesium/Widgets/widgets.css" rel="stylesheet">
+    <style>
+        html, body, #cesiumContainer {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+        }
+    </style>
+</head>
+<body>
+    <div id="cesiumContainer"></div>
+
+    <script>
+        const viewer = new Cesium.Viewer('cesiumContainer', {
+            terrainProvider: new Cesium.CesiumTerrainProvider({
+                url: '//assets.agi.com/stk-terrain/world'  // Use STK World Terrain provider
+            }),
+            baseLayerPicker: false,  // Disable base layer picker
+            imageryProvider: new Cesium.OpenStreetMapImageryProvider({
+                url: 'https://a.tile.openstreetmap.org/'
+            })
+        });
+
+        // Function to load GeoJSON and add entities
+        function loadGeoJSON(url) {
+            fetch(url)
+                .then(response => response.json())
+                .then(data => {
+                    const dataSource = new Cesium.GeoJsonDataSource();
+                    viewer.dataSources.add(dataSource);
+
+                    data.features.forEach(feature => {
+                        if (feature.geometry.type === 'Polygon') {
+                            // For building polygons, extrude them based on height
+                            const coordinates = feature.geometry.coordinates[0].map(coord => Cesium.Cartesian3.fromDegrees(coord[0], coord[1]));
+                            const height = feature.properties.height || 50; // Default height is 50m
+
+                            const buildingEntity = dataSource.entities.add({
+                                polygon: {
+                                    hierarchy: new Cesium.PolygonHierarchy(coordinates),
+                                    material: Cesium.Color.BLUE.withAlpha(0.5),
+                                    outline: true,
+                                    outlineColor: Cesium.Color.BLACK,
+                                    extrudedHeight: height
+                                }
+                            });
+
+                            // Bind the building name as a label, shown on zoom in
+                            const buildingName = feature.properties.name || feature.properties['@id'];
+                            buildingEntity.label = new Cesium.LabelGraphics({
+                                text: buildingName,
+                                font: '16px sans-serif',
+                                style: Cesium.LabelStyle.FILL_AND_OUTLINE,
+                                outlineWidth: 2,
+                                outlineColor: Cesium.Color.BLACK,
+                                show: false, // Initially hidden, will show when zoomed in
+                                verticalOrigin: Cesium.VerticalOrigin.BOTTOM,
+                                pixelOffset: new Cesium.Cartesian2(0, -height / 2) // Adjust label position
+                            });
+
+                            // Adjust label visibility based on zoom level
+                            viewer.scene.camera.changed.addEventListener(() => {
+                                const zoomLevel = viewer.camera.positionCartographic.height;
+                                if (zoomLevel > 500) { // Change visibility based on zoom level
+                                    buildingEntity.label.show = true;
+                                } else {
+                                    buildingEntity.label.show = false;
+                                }
+                            });
+                        }
+
+                        if (feature.geometry.type === 'Point') {
+                            // For point features, show a video popup
+                            const position = Cesium.Cartesian3.fromDegrees(feature.geometry.coordinates[0], feature.geometry.coordinates[1]);
+                            const videoUrl = feature.properties.video;
+
+                            const pointEntity = dataSource.entities.add({
+                                position: position,
+                                point: {
+                                    pixelSize: 10,
+                                    color: Cesium.Color.RED
+                                },
+                                description: `
+                                    <h3>${feature.properties['@id']}</h3>
+                                    <p>${feature.properties.name || 'No name available'}</p>
+                                    <p>Video:</p>
+                                    <a href="${videoUrl}" target="_blank">
+                                        <video width="320" height="240" controls>
+                                            <source src="${videoUrl}" type="video/mp4">
+                                            Your browser does not support the video tag.
+                                        </video>
+                                    </a>
+                                `
+                            });
+                        }
+                    });
+
+                    viewer.zoomTo(dataSource);
+                })
+                .catch(error => console.error('Error loading GeoJSON:', error));
+        }
+
+        // Load the GeoJSON data from your local file or URL
+        loadGeoJSON('data.geojson');  // Replace with your actual GeoJSON file path
+
+        // Set camera to a reasonable initial view
+        viewer.camera.setView({
+            destination: Cesium.Cartesian3.fromDegrees(80.5651717, 16.4211817, 1000) // Adjust the height (1000m)
+        });
+    </script>
+</body>
+</html> -->

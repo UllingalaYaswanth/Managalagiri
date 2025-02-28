@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cesium - Display Building Names and Videos</title>
+    <script src="https://unpkg.com/cesium@latest/Build/Cesium/Cesium.js"></script>
+    <link href="https://unpkg.com/cesium@latest/Build/Cesium/Widgets/widgets.css" rel="stylesheet">
+    <style>
+        html, body, #cesiumContainer {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+        }
+    </style>
+</head>
+<body>
+    <div id="cesiumContainer"></div>
+
+    <script>
+        Cesium.createWorldTerrainAsync().then(terrainProvider => {
+            const viewer = new Cesium.Viewer('cesiumContainer', {
+                terrainProvider: terrainProvider,
+                sceneMode: Cesium.SceneMode.SCENE3D,
+            });
+
+            const zoomThreshold = 500;  // Zoom threshold in meters for showing labels
+
+            const geoJsonUrl = 'http://192.168.6.8:8081/data-test.geojson'; // Update this path if necessary
+
+            let geoJsonData = {};  // To hold the GeoJSON data
+
+            fetch(geoJsonUrl)
+                .then(response => response.json())
+                .then(data => {
+                    geoJsonData = data;
+                    loadGeoJsonData(data);
+                })
+                .catch(error => {
+                    console.log(`Error loading GeoJSON file: ${error}`);
+                });
+
+            // Function to load GeoJSON data into Cesium
+            function loadGeoJsonData(geojsonData) {
+                Cesium.GeoJsonDataSource.load(geojsonData, {
+                    clampToGround: false
+                }).then(dataSource => {
+                    viewer.dataSources.add(dataSource);
+                    const entities = dataSource.entities.values;
+
+                    entities.forEach(entity => {
+                        if (entity.position && entity.properties.video) {
+                            const videoUrl = entity.properties.video;
+
+                            // Set the description with HTML for the video
+                            entity.description = ` 
+                                <h3>${entity.properties['@id']}</h3>
+                                <video width="320" height="240" controls>
+                                    <source src="${videoUrl}" type="video/mp4">
+                                    Your browser does not support the video tag.
+                                </video>
+                            `;
+                        }
+                    });
+
+                    viewer.zoomTo(dataSource);
+                });
+            }
+
+            // Function to add a new anchor when the user clicks on the map
+            viewer.screenSpaceEventHandler.setInputAction(function (click) {
+                const ray = viewer.camera.getPickRay(click.position);
+                const cartesian = viewer.scene.globe.pick(ray, viewer.scene);
+                if (cartesian) {
+                    const cartographic = Cesium.Cartographic.fromCartesian(cartesian);
+                    const lon = Cesium.Math.toDegrees(cartographic.longitude);
+                    const lat = Cesium.Math.toDegrees(cartographic.latitude);
+
+                    // Create a new point (anchor)
+                    const newAnchor = {
+                        type: "Feature",
+                        properties: {
+                            "@id": `New Anchor ${lon.toFixed(4)}, ${lat.toFixed(4)}`,
+                            "video": "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4"
+                        },
+                        geometry: {
+                            type: "Point",
+                            coordinates: [lon, lat]
+                        }
+                    };
+
+                    geoJsonData.features.push(newAnchor);
+
+                    // Add this anchor to the viewer
+                    viewer.entities.add({
+                        position: Cesium.Cartesian3.fromDegrees(lon, lat),
+                        point: {
+                            pixelSize: 10,
+                            color: Cesium.Color.RED
+                        },
+                        description: ` 
+                            <h3>${newAnchor.properties["@id"]}</h3>
+                            <video width="320" height="240" controls>
+                                <source src="${newAnchor.properties.video}" type="video/mp4">
+                                Your browser does not support the video tag.
+                            </video>
+                        `
+                    });
+
+                    // Dynamically update GeoJSON file (send updated data to the server)
+                    updateGeoJsonOnServer();
+                }
+            }, Cesium.ScreenSpaceEventType.LEFT_CLICK);
+
+            // Function to send updated GeoJSON data to the server (for dynamic update)
+            function updateGeoJsonOnServer() {
+                fetch(geoJsonUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(geoJsonData)  // Send the updated GeoJSON data
+                })
+                .then(response => {
+                    if (response.ok) {
+                        console.log('GeoJSON updated on the server');
+                    } else {
+                        console.log('Error updating GeoJSON on the server');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error sending updated GeoJSON:', error);
+                });
+            }
+        });
+    </script>
+</body>
+</html>

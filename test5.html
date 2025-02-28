@@ -1,0 +1,1159 @@
+<!-- <!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cesium - Dynamic Anchor Points</title>
+    <script src="https://unpkg.com/cesium@latest/Build/Cesium/Cesium.js"></script>
+    <link href="https://unpkg.com/cesium@latest/Build/Cesium/Widgets/widgets.css" rel="stylesheet">
+    <style>
+        html, body, #cesiumContainer {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+        }
+        #controls {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            z-index: 1000;
+            background: rgba(255, 255, 255, 0.8);
+            padding: 10px;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div id="cesiumContainer"></div>
+    <div id="controls">
+        <button id="addAnchorButton">Add Anchor</button>
+        <p id="status">Click on the map to add an anchor point.</p>
+    </div>
+
+    <script>
+        Cesium.createWorldTerrainAsync().then(terrainProvider => {
+            const viewer = new Cesium.Viewer('cesiumContainer', {
+                terrainProvider: terrainProvider,
+                sceneMode: Cesium.SceneMode.SCENE3D,
+            });
+
+            let geojsonData = {
+                type: "FeatureCollection",
+                features: []
+            };
+
+            // Load initial GeoJSON data
+            const geoJsonUrl = 'http://192.168.6.8:8082/data-test.geojson'; // Update this path if necessary
+
+            fetch(geoJsonUrl)
+                .then(response => response.json())
+                .then(initialGeoJson => {
+                    geojsonData = initialGeoJson;
+
+                    // Load GeoJSON into Cesium
+                    Cesium.GeoJsonDataSource.load(geojsonData, {
+                        clampToGround: false
+                    }).then(dataSource => {
+                        viewer.dataSources.add(dataSource);
+                        viewer.zoomTo(dataSource);
+                    });
+                })
+                .catch(error => {
+                    console.log(`Error loading GeoJSON file: ${error}`);
+                });
+
+            // Function to add a new anchor point
+            function addAnchorPoint(position) {
+                const cartographic = Cesium.Cartographic.fromCartesian(position);
+                const longitude = Cesium.Math.toDegrees(cartographic.longitude);
+                const latitude = Cesium.Math.toDegrees(cartographic.latitude);
+
+                // Prompt user for additional properties (e.g., name or video URL)
+                const anchorName = prompt("Enter a name for the anchor point:");
+                const videoUrl = prompt("Enter a video URL (optional):");
+
+                // Create a new feature
+                const newFeature = {
+                    type: "Feature",
+                    properties: {
+                        "@id": anchorName || "Unnamed Anchor",
+                        video: videoUrl || null
+                    },
+                    geometry: {
+                        type: "Point",
+                        coordinates: [longitude, latitude]
+                    }
+                };
+
+                // Add the new feature to the GeoJSON data
+                geojsonData.features.push(newFeature);
+
+                // Add the new feature to the Cesium viewer
+                const dataSource = new Cesium.GeoJsonDataSource();
+                Cesium.GeoJsonDataSource.load(newFeature).then(dataSource => {
+                    viewer.dataSources.add(dataSource);
+                    viewer.zoomTo(dataSource);
+                });
+
+                // Log the updated GeoJSON data
+                console.log("Updated GeoJSON:", JSON.stringify(geojsonData, null, 2));
+            }
+
+            // Add click event listener to the map
+            const handler = new Cesium.ScreenSpaceEventHandler(viewer.canvas);
+            handler.setInputAction(event => {
+                const ray = viewer.camera.getPickRay(event.position);
+                const position = viewer.scene.globe.pick(ray, viewer.scene);
+
+                if (position) {
+                    addAnchorPoint(position);
+                }
+            }, Cesium.ScreenSpaceEventType.LEFT_CLICK);
+
+            // Button to toggle adding anchor points
+            document.getElementById('addAnchorButton').addEventListener('click', () => {
+                alert("Click anywhere on the map to add an anchor point.");
+            });
+        });
+    </script>
+</body>
+</html> -->
+
+
+<!-- <!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cesium - Dynamic Anchor Points</title>
+    <script src="https://unpkg.com/cesium@latest/Build/Cesium/Cesium.js"></script>
+    <link href="https://unpkg.com/cesium@latest/Build/Cesium/Widgets/widgets.css" rel="stylesheet">
+    <style>
+        html, body, #cesiumContainer {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+        }
+        #controls {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            z-index: 1000;
+            background: rgba(255, 255, 255, 0.8);
+            padding: 10px;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div id="cesiumContainer"></div>
+    <div id="controls">
+        <button id="addAnchorButton">Add Anchor</button>
+        <p id="status">Click on the map to add an anchor point.</p>
+    </div>
+
+    <script>
+        Cesium.createWorldTerrainAsync().then(terrainProvider => {
+            const viewer = new Cesium.Viewer('cesiumContainer', {
+                terrainProvider: terrainProvider,
+                sceneMode: Cesium.SceneMode.SCENE3D,
+            });
+
+            let geojsonData = {
+                type: "FeatureCollection",
+                features: []
+            };
+
+            // Load initial GeoJSON data
+            fetch('http://192.168.6.8:8082/data-test.geojson')
+                .then(response => response.json())
+                .then(initialGeoJson => {
+                    geojsonData = initialGeoJson;
+
+                    // Load GeoJSON into Cesium
+                    Cesium.GeoJsonDataSource.load(geojsonData, {
+                        clampToGround: false
+                    }).then(dataSource => {
+                        viewer.dataSources.add(dataSource);
+                        viewer.zoomTo(dataSource);
+                    });
+                })
+                .catch(error => {
+                    console.log(`Error loading GeoJSON file: ${error}`);
+                });
+
+            // Function to add a new anchor point
+            function addAnchorPoint(position) {
+                const cartographic = Cesium.Cartographic.fromCartesian(position);
+                const longitude = Cesium.Math.toDegrees(cartographic.longitude);
+                const latitude = Cesium.Math.toDegrees(cartographic.latitude);
+
+                // Prompt user for additional properties (e.g., name or video URL)
+                const anchorName = prompt("Enter a name for the anchor point:");
+                const videoUrl = prompt("Enter a video URL (optional):");
+
+                // Create a new feature
+                const newFeature = {
+                    type: "Feature",
+                    properties: {
+                        "@id": anchorName || "Unnamed Anchor",
+                        video: videoUrl || null
+                    },
+                    geometry: {
+                        type: "Point",
+                        coordinates: [longitude, latitude]
+                    }
+                };
+
+                // Add the new feature to the GeoJSON data
+                geojsonData.features.push(newFeature);
+
+                // Add the new feature to the Cesium viewer
+                const dataSource = new Cesium.GeoJsonDataSource();
+                Cesium.GeoJsonDataSource.load(newFeature).then(dataSource => {
+                    viewer.dataSources.add(dataSource);
+                    viewer.zoomTo(dataSource);
+                });
+
+                // Send the updated GeoJSON data to the backend
+                updateGeoJsonOnServer(geojsonData);
+            }
+
+            // Function to send updated GeoJSON data to the backend
+            function updateGeoJsonOnServer(updatedGeoJson) {
+                fetch('http://127.0.0.1:8081/update-geojson', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(updatedGeoJson)
+                })
+                .then(response => response.text())
+                .then(message => {
+                    console.log(message); // Success message from the server
+                })
+                .catch(error => {
+                    console.error('Error updating GeoJSON on server:', error);
+                });
+            }
+
+            // Add click event listener to the map
+            const handler = new Cesium.ScreenSpaceEventHandler(viewer.canvas);
+            handler.setInputAction(event => {
+                const ray = viewer.camera.getPickRay(event.position);
+                const position = viewer.scene.globe.pick(ray, viewer.scene);
+
+                if (position) {
+                    addAnchorPoint(position);
+                }
+            }, Cesium.ScreenSpaceEventType.LEFT_CLICK);
+
+            // Button to toggle adding anchor points
+            document.getElementById('addAnchorButton').addEventListener('click', () => {
+                alert("Click anywhere on the map to add an anchor point.");
+            });
+        });
+    </script>
+</body>
+</html> -->
+
+<!-- <!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cesium - Dynamic Anchor Points</title>
+    <script src="https://unpkg.com/cesium@latest/Build/Cesium/Cesium.js"></script>
+    <link href="https://unpkg.com/cesium@latest/Build/Cesium/Widgets/widgets.css" rel="stylesheet">
+    <style>
+        html, body, #cesiumContainer {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+        }
+        #controls {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            z-index: 1000;
+            background: rgba(255, 255, 255, 0.8);
+            padding: 10px;
+            border-radius: 5px;
+        }
+        /* Modal styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1001;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            background-color: white;
+            padding: 20px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+        .modal video {
+            max-width: 100%;
+            height: auto;
+        }
+        .close {
+            float: right;
+            font-size: 20px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div id="cesiumContainer"></div>
+    <div id="controls">
+        <button id="addAnchorButton">Add Anchor</button>
+        <p id="status">Click on the map to add an anchor point.</p>
+    </div>
+
+    <div id="videoModal" class="modal">
+        <span class="close">&times;</span>
+        <h3 id="videoTitle"></h3>
+        <video id="videoPlayer" width="400" controls>
+            <source src="" type="video/mp4">
+            Your browser does not support the video tag.
+        </video>
+    </div>
+
+    <script>
+        Cesium.createWorldTerrainAsync().then(terrainProvider => {
+            const viewer = new Cesium.Viewer('cesiumContainer', {
+                terrainProvider: terrainProvider,
+                sceneMode: Cesium.SceneMode.SCENE3D,
+            });
+
+            let geojsonData = {
+                type: "FeatureCollection",
+                features: []
+            };
+
+            // Load initial GeoJSON data
+            fetch('http://192.168.6.8:8082/data-test.geojson')
+                .then(response => response.json())
+                .then(initialGeoJson => {
+                    geojsonData = initialGeoJson;
+
+                    // Load GeoJSON into Cesium
+                    Cesium.GeoJsonDataSource.load(geojsonData, {
+                        clampToGround: false
+                    }).then(dataSource => {
+                        viewer.dataSources.add(dataSource);
+
+                        // Add click event listeners to existing anchor points
+                        dataSource.entities.values.forEach(entity => {
+                            if (entity.position && entity.properties.video) {
+                                entity.description = `
+                                    <h3>${entity.properties['@id']}</h3>
+                                    <video width="320" height="240" controls>
+                                        <source src="${entity.properties.video}" type="video/mp4">
+                                        Your browser does not support the video tag.
+                                    </video>
+                                `;
+                            }
+                        });
+
+                        viewer.zoomTo(dataSource);
+                    });
+                })
+                .catch(error => {
+                    console.log(`Error loading GeoJSON file: ${error}`);
+                });
+
+            // Function to add a new anchor point
+            function addAnchorPoint(position) {
+                const cartographic = Cesium.Cartographic.fromCartesian(position);
+                const longitude = Cesium.Math.toDegrees(cartographic.longitude);
+                const latitude = Cesium.Math.toDegrees(cartographic.latitude);
+
+                // Confirm with the user before adding an anchor
+                const confirmAdd = confirm("Do you want to add an anchor point here?");
+                if (!confirmAdd) return;
+
+                // Prompt user for additional properties (e.g., name or video URL)
+                const anchorName = prompt("Enter a name for the anchor point:");
+                const videoUrl = prompt("Enter a video URL (optional):");
+
+                // Create a new feature
+                const newFeature = {
+                    type: "Feature",
+                    properties: {
+                        "@id": anchorName || "Unnamed Anchor",
+                        video: videoUrl || null
+                    },
+                    geometry: {
+                        type: "Point",
+                        coordinates: [longitude, latitude]
+                    }
+                };
+
+                // Add the new feature to the GeoJSON data
+                geojsonData.features.push(newFeature);
+
+                // Add the new feature to the Cesium viewer
+                const dataSource = new Cesium.GeoJsonDataSource();
+                Cesium.GeoJsonDataSource.load(newFeature).then(dataSource => {
+                    viewer.dataSources.add(dataSource);
+                    viewer.zoomTo(dataSource);
+                });
+
+                // Send the updated GeoJSON data to the backend
+                updateGeoJsonOnServer(geojsonData);
+            }
+
+            // Function to send updated GeoJSON data to the backend
+            function updateGeoJsonOnServer(updatedGeoJson) {
+                fetch('http://localhost:8081/update-geojson', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(updatedGeoJson)
+                })
+                .then(response => response.text())
+                .then(message => {
+                    console.log(message); // Success message from the server
+                })
+                .catch(error => {
+                    console.error('Error updating GeoJSON on server:', error);
+                });
+            }
+
+            // Add click event listener to the map
+            const handler = new Cesium.ScreenSpaceEventHandler(viewer.canvas);
+            handler.setInputAction(event => {
+                const ray = viewer.camera.getPickRay(event.position);
+                const position = viewer.scene.globe.pick(ray, viewer.scene);
+
+                if (position) {
+                    // Check if the click is on an existing anchor point
+                    const pickedObject = viewer.scene.pick(event.position);
+                    if (pickedObject && pickedObject.id && pickedObject.id.properties && pickedObject.id.properties.video) {
+                        // Play video in a modal
+                        const videoUrl = pickedObject.id.properties.video.getValue();
+                        const videoTitle = pickedObject.id.properties['@id'].getValue();
+
+                        const modal = document.getElementById('videoModal');
+                        const videoPlayer = document.getElementById('videoPlayer');
+                        const videoTitleElement = document.getElementById('videoTitle');
+
+                        videoTitleElement.textContent = videoTitle;
+                        videoPlayer.src = videoUrl;
+                        modal.style.display = 'block';
+
+                        // Close modal when clicking the close button
+                        document.querySelector('.close').onclick = () => {
+                            modal.style.display = 'none';
+                            videoPlayer.pause();
+                            videoPlayer.src = '';
+                        };
+
+                        // Close modal when clicking outside the modal
+                        window.onclick = (event) => {
+                            if (event.target === modal) {
+                                modal.style.display = 'none';
+                                videoPlayer.pause();
+                                videoPlayer.src = '';
+                            }
+                        };
+                    } else {
+                        // Add a new anchor point if no existing point is clicked
+                        addAnchorPoint(position);
+                    }
+                }
+            }, Cesium.ScreenSpaceEventType.LEFT_CLICK);
+
+            // Button to toggle adding anchor points
+            document.getElementById('addAnchorButton').addEventListener('click', () => {
+                alert("Click anywhere on the map to add an anchor point.");
+            });
+        });
+    </script>
+</body>
+</html> -->
+
+<!-- <!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cesium - Dynamic Anchor Points</title>
+    <script src="https://unpkg.com/cesium@latest/Build/Cesium/Cesium.js"></script>
+    <link href="https://unpkg.com/cesium@latest/Build/Cesium/Widgets/widgets.css" rel="stylesheet">
+    <style>
+        html, body, #cesiumContainer {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+        }
+        #controls {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            z-index: 1000;
+            background: rgba(255, 255, 255, 0.8);
+            padding: 10px;
+            border-radius: 5px;
+        }
+        /* Modal styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1001;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            background-color: white;
+            padding: 20px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+        .modal video {
+            max-width: 100%;
+            height: auto;
+        }
+        .close {
+            float: right;
+            font-size: 20px;
+            cursor: pointer;
+        }
+
+        /* Embedded Story Overlay */
+        #storyOverlay {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+            z-index: 1000;
+            width: 400px; /* Adjust width as needed */
+            height: 225px; /* Adjust height as needed */
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            overflow: hidden;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+        #storyOverlay iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+    </style>
+</head>
+<body>
+    <div id="cesiumContainer"></div>
+    <div id="controls">
+        <button id="addAnchorButton">Add Anchor</button>
+        <p id="status">Click on the map to add an anchor point.</p>
+    </div>
+
+    <div id="storyOverlay">
+        <iframe title="mangalagiri" src="https://ion.cesium.com/stories/viewer/?id=10987d4e-7122-4d3a-9389-fcaa8512e708" frameborder="0" allow="fullscreen" allowfullscreen="true" mozallowfullscreen="true" webkitallowfullscreen="true"></iframe>
+    </div>
+
+    <div id="videoModal" class="modal">
+        <span class="close">&times;</span>
+        <h3 id="videoTitle"></h3>
+        <video id="videoPlayer" width="400" controls>
+            <source src="" type="video/mp4">
+            Your browser does not support the video tag.
+        </video>
+    </div>
+
+    <script>
+        Cesium.createWorldTerrainAsync().then(terrainProvider => {
+            const viewer = new Cesium.Viewer('cesiumContainer', {
+                terrainProvider: terrainProvider,
+                sceneMode: Cesium.SceneMode.SCENE3D,
+            });
+
+            let geojsonData = {
+                type: "FeatureCollection",
+                features: []
+            };
+
+            // Load initial GeoJSON data
+            fetch('http://192.168.6.8:8082/data-test.geojson')
+                .then(response => response.json())
+                .then(initialGeoJson => {
+                    geojsonData = initialGeoJson;
+
+                    // Load GeoJSON into Cesium
+                    Cesium.GeoJsonDataSource.load(geojsonData, {
+                        clampToGround: false
+                    }).then(dataSource => {
+                        viewer.dataSources.add(dataSource);
+
+                        // Add click event listeners to existing anchor points
+                        dataSource.entities.values.forEach(entity => {
+                            if (entity.position && entity.properties.video) {
+                                entity.description = `
+                                    <h3>${entity.properties['@id']}</h3>
+                                    <video width="320" height="240" controls>
+                                        <source src="${entity.properties.video}" type="video/mp4">
+                                        Your browser does not support the video tag.
+                                    </video>
+                                `;
+                            }
+                        });
+
+                        viewer.zoomTo(dataSource);
+                    });
+                })
+                .catch(error => {
+                    console.log(`Error loading GeoJSON file: ${error}`);
+                });
+
+            // Function to add a new anchor point
+            function addAnchorPoint(position) {
+                const cartographic = Cesium.Cartographic.fromCartesian(position);
+                const longitude = Cesium.Math.toDegrees(cartographic.longitude);
+                const latitude = Cesium.Math.toDegrees(cartographic.latitude);
+
+                // Confirm with the user before adding an anchor
+                const confirmAdd = confirm("Do you want to add an anchor point here?");
+                if (!confirmAdd) return;
+
+                // Prompt user for additional properties (e.g., name or video URL)
+                const anchorName = prompt("Enter a name for the anchor point:");
+                const videoUrl = prompt("Enter a video URL (optional):");
+
+                // Create a new feature
+                const newFeature = {
+                    type: "Feature",
+                    properties: {
+                        "@id": anchorName || "Unnamed Anchor",
+                        video: videoUrl || null
+                    },
+                    geometry: {
+                        type: "Point",
+                        coordinates: [longitude, latitude]
+                    }
+                };
+
+                // Add the new feature to the GeoJSON data
+                geojsonData.features.push(newFeature);
+
+                // Add the new feature to the Cesium viewer
+                const dataSource = new Cesium.GeoJsonDataSource();
+                Cesium.GeoJsonDataSource.load(newFeature).then(dataSource => {
+                    viewer.dataSources.add(dataSource);
+                    viewer.zoomTo(dataSource);
+                });
+
+                // Send the updated GeoJSON data to the backend
+                updateGeoJsonOnServer(geojsonData);
+            }
+
+            // Function to send updated GeoJSON data to the backend
+            function updateGeoJsonOnServer(updatedGeoJson) {
+                fetch('http://localhost:8081/update-geojson', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(updatedGeoJson)
+                })
+                .then(response => response.text())
+                .then(message => {
+                    console.log(message); // Success message from the server
+                })
+                .catch(error => {
+                    console.error('Error updating GeoJSON on server:', error);
+                });
+            }
+
+            // Add click event listener to the map
+            const handler = new Cesium.ScreenSpaceEventHandler(viewer.canvas);
+            handler.setInputAction(event => {
+                const ray = viewer.camera.getPickRay(event.position);
+                const position = viewer.scene.globe.pick(ray, viewer.scene);
+
+                if (position) {
+                    // Check if the click is on an existing anchor point
+                    const pickedObject = viewer.scene.pick(event.position);
+                    if (pickedObject && pickedObject.id && pickedObject.id.properties && pickedObject.id.properties.video) {
+                        // Play video in a modal
+                        const videoUrl = pickedObject.id.properties.video.getValue();
+                        const videoTitle = pickedObject.id.properties['@id'].getValue();
+
+                        const modal = document.getElementById('videoModal');
+                        const videoPlayer = document.getElementById('videoPlayer');
+                        const videoTitleElement = document.getElementById('videoTitle');
+
+                        videoTitleElement.textContent = videoTitle;
+                        videoPlayer.src = videoUrl;
+                        modal.style.display = 'block';
+
+                        // Close modal when clicking the close button
+                        document.querySelector('.close').onclick = () => {
+                            modal.style.display = 'none';
+                            videoPlayer.pause();
+                            videoPlayer.src = '';
+                        };
+
+                        // Close modal when clicking outside the modal
+                        window.onclick = (event) => {
+                            if (event.target === modal) {
+                                modal.style.display = 'none';
+                                videoPlayer.pause();
+                                videoPlayer.src = '';
+                            }
+                        };
+                    } else {
+                        // Add a new anchor point if no existing point is clicked
+                        addAnchorPoint(position);
+                    }
+                }
+            }, Cesium.ScreenSpaceEventType.LEFT_CLICK);
+
+            // Button to toggle adding anchor points
+            document.getElementById('addAnchorButton').addEventListener('click', () => {
+                alert("Click anywhere on the map to add an anchor point.");
+            });
+        });
+    </script>
+</body>
+</html> -->
+
+<!-- <!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cesium - 3D Tileset with Embedded Story</title>
+    <script src="https://unpkg.com/cesium@latest/Build/Cesium/Cesium.js"></script>
+    <link href="https://unpkg.com/cesium@latest/Build/Cesium/Widgets/widgets.css" rel="stylesheet">
+    <style>
+        html, body, #cesiumContainer {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+        }
+        #controls {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            z-index: 1000;
+            background: rgba(255, 255, 255, 0.8);
+            padding: 10px;
+            border-radius: 5px;
+        }
+
+        /* Embedded Story Overlay */
+        #storyOverlay {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+            z-index: 1000;
+            width: 400px; /* Adjust width as needed */
+            height: 225px; /* Adjust height as needed */
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            overflow: hidden;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+        #storyOverlay iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+    </style>
+</head>
+<body>
+    <div id="cesiumContainer"></div>
+    <div id="controls">
+        <button id="addAnchorButton">Add Anchor</button>
+        <p id="status">Click on the map to add an anchor point.</p>
+    </div>
+
+    <div id="storyOverlay">
+        <iframe title="mangalagiri" src="https://ion.cesium.com/stories/viewer/?id=10987d4e-7122-4d3a-9389-fcaa8512e708" frameborder="0" allow="fullscreen" allowfullscreen="true" mozallowfullscreen="true" webkitallowfullscreen="true"></iframe>
+    </div>
+
+    <script>
+        // Grant CesiumJS access to your ion assets
+        Cesium.Ion.defaultAccessToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiI2YjhlMmVkNC1hYWVjLTQxYWEtOGZhYS1iOGQyNDUxY2ZlMTUiLCJpZCI6MjY0Nzg3LCJpYXQiOjE3MzUxMTAzMzV9.tdJk1ppDaw9AEy9bFB6RBU9T3H0-xOlIqVlrjDBJGQo";
+
+        const viewer = new Cesium.Viewer("cesiumContainer");
+
+        async function loadTileset() {
+            try {
+                const tileset = await Cesium.Cesium3DTileset.fromIonAssetId(3048665);
+                viewer.scene.primitives.add(tileset);
+                await viewer.zoomTo(tileset);
+
+                // Apply the default style if it exists
+                const extras = tileset.asset.extras;
+                if (
+                    Cesium.defined(extras) &&
+                    Cesium.defined(extras.ion) &&
+                    Cesium.defined(extras.ion.defaultStyle)
+                ) {
+                    tileset.style = new Cesium.Cesium3DTileStyle(extras.ion.defaultStyle);
+                }
+            } catch (error) {
+                console.error("Error loading tileset:", error);
+            }
+        }
+
+        // Load the 3D tileset
+        loadTileset();
+
+        // Function to add a new anchor point
+        function addAnchorPoint(position) {
+            const cartographic = Cesium.Cartographic.fromCartesian(position);
+            const longitude = Cesium.Math.toDegrees(cartographic.longitude);
+            const latitude = Cesium.Math.toDegrees(cartographic.latitude);
+
+            // Confirm with the user before adding an anchor
+            const confirmAdd = confirm("Do you want to add an anchor point here?");
+            if (!confirmAdd) return;
+
+            // Prompt user for additional properties (e.g., name or video URL)
+            const anchorName = prompt("Enter a name for the anchor point:");
+            const videoUrl = prompt("Enter a video URL (optional):");
+
+            // Create a new feature
+            const newFeature = {
+                type: "Feature",
+                properties: {
+                    "@id": anchorName || "Unnamed Anchor",
+                    video: videoUrl || null
+                },
+                geometry: {
+                    type: "Point",
+                    coordinates: [longitude, latitude]
+                }
+            };
+
+            // Add the new feature to the GeoJSON data
+            geojsonData.features.push(newFeature);
+
+            // Add the new feature to the Cesium viewer
+            const dataSource = new Cesium.GeoJsonDataSource();
+            Cesium.GeoJsonDataSource.load(newFeature).then(dataSource => {
+                viewer.dataSources.add(dataSource);
+                viewer.zoomTo(dataSource);
+            });
+
+            // Send the updated GeoJSON data to the backend
+            updateGeoJsonOnServer(geojsonData);
+        }
+
+        // Function to send updated GeoJSON data to the backend
+        function updateGeoJsonOnServer(updatedGeoJson) {
+            fetch('http://localhost:8081/update-geojson', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(updatedGeoJson)
+            })
+            .then(response => response.text())
+            .then(message => {
+                console.log(message); // Success message from the server
+            })
+            .catch(error => {
+                console.error('Error updating GeoJSON on server:', error);
+            });
+        }
+
+        // Add click event listener to the map
+        const handler = new Cesium.ScreenSpaceEventHandler(viewer.canvas);
+        handler.setInputAction(event => {
+            const ray = viewer.camera.getPickRay(event.position);
+            const position = viewer.scene.globe.pick(ray, viewer.scene);
+
+            if (position) {
+                addAnchorPoint(position);
+            }
+        }, Cesium.ScreenSpaceEventType.LEFT_CLICK);
+
+        // Button to toggle adding anchor points
+        document.getElementById('addAnchorButton').addEventListener('click', () => {
+            alert("Click anywhere on the map to add an anchor point.");
+        });
+    </script>
+</body>
+</html> -->
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cesium - Dynamic Anchor Points with 3D Tiles and Model</title>
+    <script src="https://unpkg.com/cesium@latest/Build/Cesium/Cesium.js"></script>
+    <link href="https://unpkg.com/cesium@latest/Build/Cesium/Widgets/widgets.css" rel="stylesheet">
+    <style>
+        html, body, #cesiumContainer {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+        }
+        #controls {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            z-index: 1000;
+            background: rgba(255, 255, 255, 0.8);
+            padding: 10px;
+            border-radius: 5px;
+        }
+        /* Modal styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1001;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            background-color: white;
+            padding: 20px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+        .modal video {
+            max-width: 100%;
+            height: auto;
+        }
+        .close {
+            float: right;
+            font-size: 20px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div id="cesiumContainer"></div>
+    <div id="controls">
+        <button id="addAnchorButton">Add Anchor</button>
+        <p id="status">Click on the map to add an anchor point.</p>
+    </div>
+
+    <div id="videoModal" class="modal">
+        <span class="close">&times;</span>
+        <h3 id="videoTitle"></h3>
+        <video id="videoPlayer" width="400" controls>
+            <source src="" type="video/mp4">
+            Your browser does not support the video tag.
+        </video>
+    </div>
+
+    <script>
+        // Grant CesiumJS access to your ion assets
+        Cesium.Ion.defaultAccessToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiI2YjhlMmVkNC1hYWVjLTQxYWEtOGZhYS1iOGQyNDUxY2ZlMTUiLCJpZCI6MjY0Nzg3LCJpYXQiOjE3MzUxMTAzMzV9.tdJk1ppDaw9AEy9bFB6RBU9T3H0-xOlIqVlrjDBJGQo";
+
+        // Initialize the Cesium Viewer with terrain
+        Cesium.createWorldTerrainAsync().then(terrainProvider => {
+            const viewer = new Cesium.Viewer('cesiumContainer', {
+                terrainProvider: terrainProvider,
+                sceneMode: Cesium.SceneMode.SCENE3D,
+            });
+
+            // Load 3D Tileset from Ion Asset ID
+            async function load3DTileset() {
+                try {
+                    const tileset = await Cesium.Cesium3DTileset.fromIonAssetId(3048665);
+                    viewer.scene.primitives.add(tileset);
+                    await viewer.zoomTo(tileset);
+
+                    // Apply the default style if it exists
+                    const extras = tileset.asset.extras;
+                    if (
+                        Cesium.defined(extras) &&
+                        Cesium.defined(extras.ion) &&
+                        Cesium.defined(extras.ion.defaultStyle)
+                    ) {
+                        tileset.style = new Cesium.Cesium3DTileStyle(extras.ion.defaultStyle);
+                    }
+                } catch (error) {
+                    console.error("Error loading 3D Tileset:", error);
+                }
+            }
+
+            // Call the function to load the 3D Tileset
+            load3DTileset();
+
+            // Add a 3D Model to the Map
+            function add3DModel(longitude, latitude, height, modelUrl) {
+                const position = Cesium.Cartesian3.fromDegrees(longitude, latitude, height);
+                viewer.entities.add({
+                    position: position,
+                    model: {
+                        uri: modelUrl, // URL to the glTF model
+                        scale: 1.0,    // Adjust the scale of the model
+                        minimumPixelSize: 128 // Minimum size in pixels
+                    }
+                });
+                viewer.zoomTo(viewer.entities);
+            }
+
+            // Example: Add a 3D model at specific coordinates
+            const modelLongitude = -75.59777; // Example longitude
+            const modelLatitude = 40.03883;   // Example latitude
+            const modelHeight = 0;           // Height above ground
+            const modelUrl = "https://example.com/path/to/model.gltf"; // Replace with your glTF model URL
+            add3DModel(modelLongitude, modelLatitude, modelHeight, modelUrl);
+
+            let geojsonData = {
+                type: "FeatureCollection",
+                features: []
+            };
+
+            // Load initial GeoJSON data
+            fetch('http://192.168.6.8:8082/data-test.geojson')
+                .then(response => response.json())
+                .then(initialGeoJson => {
+                    geojsonData = initialGeoJson;
+
+                    // Load GeoJSON into Cesium
+                    Cesium.GeoJsonDataSource.load(geojsonData, {
+                        clampToGround: false
+                    }).then(dataSource => {
+                        viewer.dataSources.add(dataSource);
+
+                        // Add click event listeners to existing anchor points
+                        dataSource.entities.values.forEach(entity => {
+                            if (entity.position && entity.properties.video) {
+                                entity.description = `
+                                    <h3>${entity.properties['@id']}</h3>
+                                    <video width="320" height="240" controls>
+                                        <source src="${entity.properties.video}" type="video/mp4">
+                                        Your browser does not support the video tag.
+                                    </video>
+                                `;
+                            }
+                        });
+
+                        viewer.zoomTo(dataSource);
+                    });
+                })
+                .catch(error => {
+                    console.log(`Error loading GeoJSON file: ${error}`);
+                });
+
+            // Function to add a new anchor point
+            function addAnchorPoint(position) {
+                const cartographic = Cesium.Cartographic.fromCartesian(position);
+                const longitude = Cesium.Math.toDegrees(cartographic.longitude);
+                const latitude = Cesium.Math.toDegrees(cartographic.latitude);
+
+                // Confirm with the user before adding an anchor
+                const confirmAdd = confirm("Do you want to add an anchor point here?");
+                if (!confirmAdd) return;
+
+                // Prompt user for additional properties (e.g., name or video URL)
+                const anchorName = prompt("Enter a name for the anchor point:");
+                const videoUrl = prompt("Enter a video URL (optional):");
+
+                // Create a new feature
+                const newFeature = {
+                    type: "Feature",
+                    properties: {
+                        "@id": anchorName || "Unnamed Anchor",
+                        video: videoUrl || null
+                    },
+                    geometry: {
+                        type: "Point",
+                        coordinates: [longitude, latitude]
+                    }
+                };
+
+                // Add the new feature to the GeoJSON data
+                geojsonData.features.push(newFeature);
+
+                // Add the new feature to the Cesium viewer
+                const dataSource = new Cesium.GeoJsonDataSource();
+                Cesium.GeoJsonDataSource.load(newFeature).then(dataSource => {
+                    viewer.dataSources.add(dataSource);
+                    viewer.zoomTo(dataSource);
+                });
+
+                // Send the updated GeoJSON data to the backend
+                updateGeoJsonOnServer(geojsonData);
+            }
+
+            // Function to send updated GeoJSON data to the backend
+            function updateGeoJsonOnServer(updatedGeoJson) {
+                fetch('http://localhost:8081/update-geojson', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(updatedGeoJson)
+                })
+                .then(response => response.text())
+                .then(message => {
+                    console.log(message); // Success message from the server
+                })
+                .catch(error => {
+                    console.error('Error updating GeoJSON on server:', error);
+                });
+            }
+
+            // Add click event listener to the map
+            const handler = new Cesium.ScreenSpaceEventHandler(viewer.canvas);
+            handler.setInputAction(event => {
+                const ray = viewer.camera.getPickRay(event.position);
+                const position = viewer.scene.globe.pick(ray, viewer.scene);
+
+                if (position) {
+                    // Check if the click is on an existing anchor point
+                    const pickedObject = viewer.scene.pick(event.position);
+                    if (pickedObject && pickedObject.id && pickedObject.id.properties && pickedObject.id.properties.video) {
+                        // Play video in a modal
+                        const videoUrl = pickedObject.id.properties.video.getValue();
+                        const videoTitle = pickedObject.id.properties['@id'].getValue();
+
+                        const modal = document.getElementById('videoModal');
+                        const videoPlayer = document.getElementById('videoPlayer');
+                        const videoTitleElement = document.getElementById('videoTitle');
+
+                        videoTitleElement.textContent = videoTitle;
+                        videoPlayer.src = videoUrl;
+                        modal.style.display = 'block';
+
+                        // Close modal when clicking the close button
+                        document.querySelector('.close').onclick = () => {
+                            modal.style.display = 'none';
+                            videoPlayer.pause();
+                            videoPlayer.src = '';
+                        };
+
+                        // Close modal when clicking outside the modal
+                        window.onclick = (event) => {
+                            if (event.target === modal) {
+                                modal.style.display = 'none';
+                                videoPlayer.pause();
+                                videoPlayer.src = '';
+                            }
+                        };
+                    } else {
+                        // Add a new anchor point if no existing point is clicked
+                        addAnchorPoint(position);
+                    }
+                }
+            }, Cesium.ScreenSpaceEventType.LEFT_CLICK);
+
+            // Button to toggle adding anchor points
+            document.getElementById('addAnchorButton').addEventListener('click', () => {
+                alert("Click anywhere on the map to add an anchor point.");
+            });
+        });
+    </script>
+</body>
+</html>

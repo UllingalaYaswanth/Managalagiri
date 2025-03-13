@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -46,16 +47,12 @@
             cursor: pointer;
         }
 
-        /* Button container for toggling 3D tileset and GeoJSON */
-        #buttonContainer {
+        /* Button for toggling 3D tileset */
+        #toggleTilesetButton {
             position: absolute;
             top: 10px;
             right: 10px;
             z-index: 1000;
-            display: flex;
-            gap: 10px; /* Space between buttons */
-        }
-        #buttonContainer button {
             background-color: rgba(0, 0, 0, 0.7);
             color: white;
             padding: 10px;
@@ -72,11 +69,7 @@
         <p id="status">Click on the map to add an anchor point.</p>
     </div>
 
-    <!-- Button container for toggling 3D tileset and GeoJSON -->
-    <div id="buttonContainer">
-        <button id="toggleTilesetButton">Toggle 3D Tileset</button>
-        <button id="toggleGeoJsonButton">Toggle GeoJSON</button>
-    </div>
+    <button id="toggleTilesetButton">Toggle 3D Tileset</button>
 
     <div id="videoModal" class="modal">
         <span class="close">&times;</span>
@@ -92,7 +85,6 @@
         Cesium.Ion.defaultAccessToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiI2YjhlMmVkNC1hYWVjLTQxYWEtOGZhYS1iOGQyNDUxY2ZlMTUiLCJpZCI6MjY0Nzg3LCJpYXQiOjE3MzUxMTAzMzV9.tdJk1ppDaw9AEy9bFB6RBU9T3H0-xOlIqVlrjDBJGQo";
         const zoomThreshold = 500;
         let tileset; // To hold the 3D Tileset
-        let geoJsonDataSource; // To hold the GeoJSON data source
 
         // Initialize the Cesium Viewer with terrain
         Cesium.createWorldTerrainAsync().then(terrainProvider => {
@@ -169,7 +161,6 @@
                     Cesium.GeoJsonDataSource.load(geojsonData, {
                         clampToGround: false  // Ensure buildings are rendered with height
                     }).then(dataSource => {
-                        geoJsonDataSource = dataSource; // Store the data source for toggling
                         viewer.dataSources.add(dataSource);
                         const entities = dataSource.entities.values;
 
@@ -357,15 +348,6 @@
             const closeModal = document.querySelector('.close');
             closeModal.addEventListener('click', () => {
                 document.getElementById('videoModal').style.display = 'none';
-            });
-
-            // Button to toggle the visibility of the GeoJSON data
-            document.getElementById('toggleGeoJsonButton').addEventListener('click', () => {
-                if (geoJsonDataSource) {
-                    geoJsonDataSource.show = !geoJsonDataSource.show; // Toggle the visibility of the GeoJSON data
-                    const status = geoJsonDataSource.show ? 'shown' : 'hidden';
-                    alert(`GeoJSON data is now ${status}`);
-                }
             });
         });
     </script>

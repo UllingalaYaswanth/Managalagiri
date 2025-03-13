@@ -1,0 +1,445 @@
+<!-- <!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GeoJSON Map with Multiple Popups</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <style>
+        #map { height: 100vh; }
+        
+    </style>
+</head>
+<body>
+    <div id="map"></div>
+
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <script>
+        // Initialize the map
+        const map = L.map('map').setView([16.4211817, 80.5651717], 15);
+
+        // Add a tile layer (you can use OpenStreetMap or any other tile layer)
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap contributors'
+        }).addTo(map);
+
+        // Function to load GeoJSON data and add it to the map
+        function loadGeoJSON(url) {
+            fetch(url)
+                .then(response => response.json())
+                .then(data => {
+                    L.geoJSON(data, {
+                        onEachFeature: function (feature, layer) {
+                            if (feature.geometry.type === 'Point') {
+                                // Extract the video URL from the feature's properties
+                                const videoUrl = feature.properties.video;
+
+                                // Bind a popup to the point feature
+                                layer.bindPopup(`
+                                    <h3>${feature.properties['@id']}</h3>
+                                    <video width="320" height="240" controls>
+                                        <source src="${videoUrl}" type="video/mp4">
+                                        Your browser does not support the video tag.
+                                    </video>
+                                `);
+                            }
+                        }
+                    }).addTo(map);
+                })
+                .catch(error => console.error('Error loading GeoJSON:', error));
+        }
+
+        // Load the GeoJSON data from the external file
+        loadGeoJSON('data.geojson');
+    </script>
+</body>
+</html> -->
+
+<!-- <!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GeoJSON Map with Building Name on Zoom</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <style>
+        #map { height: 100vh; }
+    </style>
+</head>
+<body>
+    <div id="map"></div>
+
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <script>
+        // Initialize the map
+        const map = L.map('map').setView([16.4211817, 80.5651717], 15);
+
+        // Add a tile layer (you can use OpenStreetMap or any other tile layer)
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap contributors'
+        }).addTo(map);
+
+        // Function to load GeoJSON data and add it to the map
+        function loadGeoJSON(url) {
+            fetch(url)
+                .then(response => response.json())
+                .then(data => {
+                    L.geoJSON(data, {
+                        onEachFeature: function (feature, layer) {
+                            if (feature.geometry.type === 'Polygon') {
+                                // For building polygons, add a label at the top of the building when zoomed in
+
+                                const buildingName = feature.properties['@id']; // Using the building's ID as its name
+
+                                // Calculate the centroid of the building's polygon to place the label at the top
+                                const latlngs = feature.geometry.coordinates[0];
+                                const centroid = L.polygon(latlngs).getBounds().getCenter();
+
+                                // Bind the label to appear at the top when zooming in
+                                layer.bindTooltip(buildingName, {
+                                    permanent: false,
+                                    direction: 'top',
+                                    offset: [0, -10] // Slightly offset the label to appear above the building
+                                });
+
+                                layer.on('mouseover', function() {
+                                    this.openTooltip();
+                                });
+
+                                layer.on('mouseout', function() {
+                                    this.closeTooltip();
+                                });
+                            }
+                            if (feature.geometry.type === 'Point') {
+                                // For point features, bind a video popup (as before)
+                                const videoUrl = feature.properties.video;
+
+                                layer.bindPopup(`
+                                    <h3>${feature.properties['@id']}</h3>
+                                    <video width="320" height="240" controls>
+                                        <source src="${videoUrl}" type="video/mp4">
+                                        Your browser does not support the video tag.
+                                    </video>
+                                `);
+                            }
+                        }
+                    }).addTo(map);
+                })
+                .catch(error => console.error('Error loading GeoJSON:', error));
+        }
+
+        // Load the GeoJSON data from the external file
+        loadGeoJSON('data.geojson');
+
+        // Show building name only when zoomed in to a certain level
+        map.on('zoomend', function () {
+            const zoomLevel = map.getZoom();
+            if (zoomLevel >= 18) { // You can adjust the zoom level as needed
+                map.eachLayer(function (layer) {
+                    if (layer instanceof L.Polygon) {
+                        layer.openTooltip(); // Open the tooltip when zoomed in
+                    }
+                });
+            } else {
+                map.eachLayer(function (layer) {
+                    if (layer instanceof L.Polygon) {
+                        layer.closeTooltip(); // Close the tooltip when zoomed out
+                    }
+                });
+            }
+        });
+    </script>
+</body>
+</html> -->
+
+<!-- <!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GeoJSON Map with Building Name on Zoom</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <style>
+        #map { height: 100vh; }
+    </style>
+</head>
+<body>
+    <div id="map"></div>
+
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <script>
+        // Initialize the map
+        const map = L.map('map').setView([16.4211817, 80.5651717], 15);
+
+        // Add a tile layer (you can use OpenStreetMap or any other tile layer)
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap contributors'
+        }).addTo(map);
+
+        // Function to load GeoJSON data and add it to the map
+        function loadGeoJSON(url) {
+            fetch(url)
+                .then(response => response.json())
+                .then(data => {
+                    L.geoJSON(data, {
+                        onEachFeature: function (feature, layer) {
+                            if (feature.geometry.type === 'Polygon') {
+                                // For building polygons, add a label at the top of the building when zoomed in
+
+                                const buildingName = feature.properties['@id']; // Using the building's ID as its name
+
+                                // Calculate the centroid of the building's polygon to place the label at the top
+                                const latlngs = feature.geometry.coordinates[0];
+                                const centroid = L.polygon(latlngs).getBounds().getCenter();
+
+                                // Bind the label to appear at the top when zooming in
+                                layer.bindTooltip(buildingName, {
+                                    permanent: true,  // Keep the tooltip always visible
+                                    direction: 'top',  // Position the label above the building
+                                    offset: [0, -10]   // Slightly offset the label to appear above the building
+                                });
+
+                                // Initially show the tooltip if zoom level is sufficient
+                                if (map.getZoom() >= 18) {
+                                    layer.openTooltip();
+                                }
+                            }
+                            if (feature.geometry.type === 'Point') {
+                                // For point features, bind a video popup (as before)
+                                const videoUrl = feature.properties.video;
+
+                                layer.bindPopup(`
+                                    <h3>${feature.properties['@id']}</h3>
+                                    <video width="320" height="240" controls>
+                                        <source src="${videoUrl}" type="video/mp4">
+                                        Your browser does not support the video tag.
+                                    </video>
+                                `);
+                            }
+                        }
+                    }).addTo(map);
+                })
+                .catch(error => console.error('Error loading GeoJSON:', error));
+        }
+
+        // Load the GeoJSON data from the external file
+        loadGeoJSON('data.geojson');
+
+        // Show building name only when zoomed in to a certain level
+        map.on('zoomend', function () {
+            const zoomLevel = map.getZoom();
+            if (zoomLevel >= 18) { // You can adjust the zoom level as needed
+                map.eachLayer(function (layer) {
+                    if (layer instanceof L.Polygon) {
+                        layer.openTooltip(); // Keep the tooltip open when zoomed in
+                    }
+                });
+            } else {
+                map.eachLayer(function (layer) {
+                    if (layer instanceof L.Polygon) {
+                        layer.closeTooltip(); // Close the tooltip when zoomed out
+                    }
+                });
+            }
+        });
+    </script>
+</body>
+</html> -->
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GeoJSON Map with Building Name on Zoom</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <style>
+        #map { height: 100vh; }
+    </style>
+</head>
+<body>
+    <div id="map"></div>
+
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <script>
+        // Initialize the map with a higher maxZoom value
+        const map = L.map('map', {
+            center: [16.4211817, 80.5651717],
+            zoom: 15,
+            maxZoom: 22 // Increase the maxZoom to 22 or higher
+        });
+
+        // Add a tile layer with a higher maxZoom value
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap contributors',
+            maxZoom: 22 // Set maxZoom here as well
+        }).addTo(map);
+
+        // Function to load GeoJSON data and add it to the map
+        function loadGeoJSON(url) {
+            fetch(url)
+                .then(response => response.json())
+                .then(data => {
+                    L.geoJSON(data, {
+                        onEachFeature: function (feature, layer) {
+                            if (feature.geometry.type === 'Polygon') {
+                                // For building polygons, add a label at the top of the building when zoomed in
+
+                                const buildingName = feature.properties['@id']; // Using the building's ID as its name
+
+                                // Calculate the centroid of the building's polygon to place the label at the top
+                                const latlngs = feature.geometry.coordinates[0];
+                                const centroid = L.polygon(latlngs).getBounds().getCenter();
+
+                                // Bind the label to appear at the top when zooming in
+                                layer.bindTooltip(buildingName, {
+                                    permanent: true,  // Keep the tooltip always visible
+                                    direction: 'top',  // Position the label above the building
+                                    offset: [0, -10]   // Slightly offset the label to appear above the building
+                                });
+
+                                // Initially show the tooltip if zoom level is sufficient
+                                if (map.getZoom() >= 20) {
+                                    layer.openTooltip();
+                                }
+                            }
+                            if (feature.geometry.type === 'Point') {
+                                // For point features, bind a video popup (as before)
+                                const videoUrl = feature.properties.video;
+
+                                layer.bindPopup(`
+                                    <h3>${feature.properties['@id']}</h3>
+                                    <video width="320" height="240" controls>
+                                        <source src="${videoUrl}" type="video/mp4">
+                                        Your browser does not support the video tag.
+                                    </video>
+                                `);
+                            }
+                        }
+                    }).addTo(map);
+                })
+                .catch(error => console.error('Error loading GeoJSON:', error));
+        }
+ 
+        // Load the GeoJSON data from the external file
+        loadGeoJSON('data.geojson');
+
+        // Show building name only when zoomed in to a certain level
+        map.on('zoomend', function () {
+            const zoomLevel = map.getZoom();
+            if (zoomLevel >= 20) { // Adjusted to zoom level 20
+                map.eachLayer(function (layer) {
+                    if (layer instanceof L.Polygon) {
+                        layer.openTooltip(); // Keep the tooltip open when zoomed in
+                    }
+                });
+            } else {
+                map.eachLayer(function (layer) {
+                    if (layer instanceof L.Polygon) {
+                        layer.closeTooltip(); // Close the tooltip when zoomed out
+                    }
+                });
+            }
+        });
+    </script>
+</body>
+</html>
+
+
+<!-- <!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>3D Building Visualization with Leaflet and deck.gl</title>
+    
+        <link rel="icon" href="favicon.ico" type="image/x-icon">
+        
+        <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+        <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+        <script src="https://unpkg.com/@deck.gl/core@8.5.0/dist.min.js"></script>
+        <script src="https://unpkg.com/@deck.gl/layers@8.5.0/dist.min.js"></script>
+        <script src="https://unpkg.com/@deck.gl/leaflet@8.5.0/dist.min.js"></script>
+        <style>
+            #map { height: 100vh; }
+        </style>
+    </head>
+    
+<body>
+    <div id="map"></div>
+
+    <script>
+        // Initialize the Leaflet map
+        const map = L.map('map', {
+            center: [16.4211817, 80.5651717],
+            zoom: 15,
+            maxZoom: 22
+        });
+
+        // Add a tile layer (OpenStreetMap)
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap contributors',
+            maxZoom: 22
+        }).addTo(map);
+
+        // Load GeoJSON data (replace with your own data)
+        const geojsonData = {
+            "type": "FeatureCollection",
+            "features": [
+                {
+                    "type": "Feature",
+                    "properties": {
+                        "@id": "Building 1",
+                        "height": 50
+                    },
+                    "geometry": {
+                        "type": "Polygon",
+                        "coordinates": [
+                            [
+                                [80.5651717, 16.4211817],
+                                [80.5653112, 16.4211457],
+                                [80.5654228, 16.42151],
+                                [80.5653005, 16.4215481],
+                                [80.5651717, 16.4211817]
+                            ]
+                        ]
+                    }
+                }
+            ]
+        };
+
+        // Convert GeoJSON to deck.gl data (extrude the polygons based on height)
+        const buildings = geojsonData.features.map((feature) => {
+            const coordinates = feature.geometry.coordinates[0];
+            const height = feature.properties.height || 0;
+            
+            return {
+                position: coordinates.map(coord => [coord[0], coord[1]]), // Extract coordinates
+                extruded: true,
+                height: height, // Building height
+                color: [255, 0, 0], // Color of the building
+            };
+        });
+
+        // Create a deck.gl layer for 3D building visualization
+        const deckLayer = new deck.DeckGL({
+            map: map,
+            layers: [
+                new deck.PolygonLayer({
+                    id: 'building-layer',
+                    data: buildings,
+                    extruded: true,
+                    getPolygon: d => d.position,
+                    getElevation: d => d.height,
+                    getFillColor: d => d.color,
+                    elevationScale: 0.1, // Scale of the building heights
+                })
+            ]
+        });
+
+        // Add the deck.gl layer to the Leaflet map
+        deckLayer.setMap(map);
+    </script>
+</body>
+</html> -->

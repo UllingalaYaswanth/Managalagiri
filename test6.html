@@ -125,7 +125,7 @@
             };
 
             // Load initial GeoJSON data
-            fetch('http://192.168.6.8:8082/data-test.geojson')
+            fetch('http://192.168.6.8:8081/data-test.geojson')
                 .then(response => response.json())
                 .then(initialGeoJson => {
                     geojsonData = initialGeoJson;
@@ -407,7 +407,7 @@
             };
 
             // Load initial GeoJSON data
-            const geoJsonUrl = 'http://192.168.6.8:8082/data-test.geojson'; // Update this path if necessary
+            const geoJsonUrl = 'http://192.168.6.8:8081/data-test.geojson'; // Update this path if necessary
 
             fetch(geoJsonUrl)
                 .then(response => response.json())
@@ -932,7 +932,7 @@
             };
 
             // Load initial GeoJSON data
-            const geoJsonUrl = 'http://192.168.6.8:8082/data-test.geojson'; // Update this path if necessary
+            const geoJsonUrl = 'http://192.168.6.8:8081/data-test.geojson'; // Update this path if necessary
 
             fetch(geoJsonUrl)
                 .then(response => response.json())

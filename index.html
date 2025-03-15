@@ -71,8 +71,6 @@
         <button id="addAnchorButton">Add Anchor</button>
         <p id="status">Click on the map to add an anchor point.</p>
     </div>
-
-    <!-- Button container for toggling 3D tileset and GeoJSON -->
     <div id="buttonContainer">
         <button id="toggleTilesetButton">Toggle 3D Tileset</button>
         <button id="toggleGeoJsonButton">Toggle GeoJSON</button>
@@ -161,7 +159,7 @@
             };
 
             // Load initial GeoJSON data
-            const geoJsonUrl = 'http://192.168.6.8:8082/data-test.geojson'; // Update this path if necessary
+            const geoJsonUrl = 'http://192.168.6.8:8081/data-test.geojson'; // Update this path if necessary
 
             fetch(geoJsonUrl)
                 .then(response => response.json())
